@@ -24,7 +24,11 @@ int main(){
     //  cout << problem->find_mass_right() << endl;
 
     vector<pair<int,int>> tmp = problem->pickUp();
-    problem->dropDown(tmp[0]);
+
+    for(int i = 0; i < tmp.size(); i++){
+        vector<Ship*> temp = problem->dropDown(tmp[i]);
+        // cout << "tempSize: " << temp.size() << endl;
+    }
     // vec1 = sort_larger_mass(problem);
     // for(int i = 0; i < vec1.size(); ++i){
     //     cout << vec1.at(i) << " ";

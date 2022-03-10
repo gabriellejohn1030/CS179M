@@ -10,12 +10,12 @@ Ship::Ship(){
     {                                   // ij (row, column)
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 00 01 02 03 04 05 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 10 11 12 13 14 15 
-        {1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,20,-1},      // 30 31 32 33 34 35 
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
+        {-1,-1,4,-1,-1,-1,-1,-1,-1,-1,20,-1},      // 30 31 32 33 34 35 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3},      // 40 41 42 43 44 45 
-        {10,-1,-1,-1,-1,-1,-1,-1,-1,6,-1,-1},      // 50 51 52 53 54 55 
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,6,-1,-1},      // 50 51 52 53 54 55 
         {-1,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
-        {-1,100,99,-1,-1,-1,-1,-1,-1,330,-1,-1}    // 70 71 72 73 74 75
+        {10,100,99,-1,-1,-1,-1,-1,-1,330,-1,-1}    // 70 71 72 73 74 75
     };
     setUniqueKey();
 }
@@ -28,7 +28,7 @@ Ship::Ship(vector<vector<int>> p){
 void Ship::print(){
     for(int i =0; i < grid.size(); ++i ){
         for(int j = 0; j < grid.at(0).size(); j++){
-            cout << grid.at(i).at(j) << "    ";
+            cout << grid.at(i).at(j) << '\t';
         }
         cout << endl;
     }
@@ -108,7 +108,7 @@ vector<pair<int,int>> Ship::pickUp(){
     }
     for(int i = 0; i < pickupIdxs.size(); ++i){
         pickupIdxs.erase(remove(pickupIdxs.begin(), pickupIdxs.end(), make_pair(-1,-1)), pickupIdxs.end());
-        cout << pickupIdxs[i].first << ' ' << pickupIdxs[i].second << ' ' << grid[pickupIdxs[i].first][pickupIdxs[i].second] << endl;
+        // cout << pickupIdxs[i].first << ' ' << pickupIdxs[i].second << ' ' << grid[pickupIdxs[i].first][pickupIdxs[i].second] << endl;
     }
     return pickupIdxs;
 }
@@ -118,39 +118,49 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
     Ship *move = new Ship(grid);
     pair<int, int> left = idx;
     pair<int, int> right = idx;
-
-    while(1){
-        move = move_right(move, left);
+    int size = 12;
+    int i = 0;
+    
+    while(size > 0){
+        move = move_right(move, right);
         if(move == NULL){
-            break;
+            size--;
+            continue;
         }
         children.push_back(move);
+        size--;
     }
-    while(1){
-        move = move_left(move, right);
+    size = 12;
+    move = new Ship(grid);
+    while(size > 0){
+        move = move_left(move, left);
         if(move == NULL){
-            break;
+            size--;
+            continue;
         }
         children.push_back(move);
+        size--;
     }
     return children;
 }
 
 Ship* move_right(Ship *p, pair<int, int> &idx){
-
-}
-
-Ship* move_left(Ship *p, pair<int, int> &idx){
-    if(idx.second + 1 >= p->grid.size()){
+    if(idx.second + 1 >= 12){
         return NULL;
     }
     vector<vector<int>> g = p->grid;
     int row = idx.first;
-    int column = idx.second - 1;
+    int column = idx.second + 1;
 
-    for(int i = 0; i < idx.second; ++i){
+    for(int i = 0; i < g.size(); ++i){
         if(g[row][column] == -1){
-            if(row + 1 > p->grid.size() || g[row + 1][column] != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
+            if(row + 1 >= g.size()){
+                swap(p->grid[row][column], p->grid[idx.first][idx.second]);
+                idx.first = row;
+                idx.second = column;
+                return p;
+            }
+            else if(g[row + 1][column] != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
                 swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                 idx.first = row;
                 idx.second = column;
@@ -176,8 +186,54 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
                     return p;
                 }
                 row--;
-            }
+        }
     }
+    return p;
+}
 
+Ship* move_left(Ship *p, pair<int, int> &idx){ 
+    if(idx.second - 1 < 0){
+        return NULL;
+    }
+    vector<vector<int>> g = p->grid;
+    int row = idx.first;
+    int column = idx.second - 1;
+
+    for(int i = 0; i < idx.second; ++i){
+        if(g[row][column] == -1){
+            if(row + 1 >= g.size()){
+                swap(p->grid[row][column], p->grid[idx.first][idx.second]);
+                idx.first = row;
+                idx.second = column;
+                return p;
+            }
+            else if(g[row + 1][column] != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
+                swap(p->grid[row][column], p->grid[idx.first][idx.second]);
+                idx.first = row;
+                idx.second = column;
+                return p;
+            }
+            row++;
+            while(row < p->grid.size()){ //moves crate to the very bottom or right before first occupied space in the column
+                if(g[row][column] != -1){
+                    swap(p->grid[row-1][column], p->grid[idx.first][idx.second]);
+                    idx.first = row-1;
+                    idx.second = column;
+                    return p;
+                }
+                row++;
+            }
+        }
+        row--;
+        while(row > -1){ //edge case is if column is filled to the top
+                if(g[row][column] == -1){
+                    swap(p->grid[row][column], p->grid[idx.first][idx.second]);
+                    idx.first = row;
+                    idx.second = column;
+                    return p;
+                }
+                row--;
+        }
+    }
     return p;
 }
