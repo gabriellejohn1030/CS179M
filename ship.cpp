@@ -11,13 +11,14 @@ Ship::Ship(){
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 00 01 02 03 04 05 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 10 11 12 13 14 15 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
-        {-1,-1,4,-1,-1,-1,-1,-1,-1,-1,20,-1},      // 30 31 32 33 34 35 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3},      // 40 41 42 43 44 45 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,6,-1,-1},      // 50 51 52 53 54 55 
-        {-1,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
-        {10,100,99,-1,-1,-1,-1,-1,-1,330,-1,-1}    // 70 71 72 73 74 75
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
+        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
+        {-1,-1,-1,-1,10,6,4,-1,-1,-1,-1,-1}    // 70 71 72 73 74 75
     };
     setUniqueKey();
+    
 }
 
 Ship::Ship(vector<vector<int>> p){
@@ -38,7 +39,7 @@ int Ship::find_mass_left(){
     int sum = 0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = 0; j < grid.at(0).size()/2; ++j){
-            if(grid.at(i).at(j) != 0){
+            if(grid.at(i).at(j) != -1){
                 sum = sum + grid.at(i).at(j);
             }
         }
@@ -51,7 +52,7 @@ int Ship::find_mass_right(){
     int sum = 0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = grid.at(0).size()/2; j < grid.at(0).size(); ++j){
-            if(grid.at(i).at(j) != 0){
+            if(grid.at(i).at(j) != -1){
                 sum = sum + grid.at(i).at(j);
             }
         }
@@ -92,6 +93,7 @@ void Ship::setUniqueKey(){
     }
     uniqueKey = key;
 }
+
 
 vector<pair<int,int>> Ship::pickUp(){
     vector<int> filled(grid[0].size(), -1);
@@ -236,4 +238,164 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
         }
     }
     return p;
+}
+
+string Ship::ret_larger_side(){
+    int left = find_mass_left();
+    int right = find_mass_right();
+    string tmp = "";
+
+    if(left > right){
+        tmp = "left";
+    }
+    else{
+        tmp = "right";
+    }
+
+    return tmp;
+}
+
+vector<int> Ship::sort_larger_mass(){
+    string tmp = ret_larger_side();
+    vector<vector<int>> p = grid;
+    vector<int> vec1;
+    if(tmp == "left"){
+        for(int i = 0; i < p.size(); i++){
+            for(int j = 0; j < p.at(0).size()/2; ++j){
+                if(p.at(i).at(j) != -1){
+                    vec1.push_back(p.at(i).at(j));
+                }
+            }
+        }
+    }
+    else if(tmp == "right"){
+        for(int i = 0; i < p.size(); i++){
+            for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
+                if(p.at(i).at(j) != -1){
+                    vec1.push_back(p.at(i).at(j));
+                }
+            }
+        }
+    }
+
+    sort(vec1.begin(), vec1.end());
+    reverse(vec1.begin(), vec1.end());
+
+    return vec1;
+}
+
+vector<int> Ship::find_num_containers(){
+    vector<int> temp = sort_larger_mass();
+    int def = deficit();
+    vector<int> values;
+    bool bal = false;
+    int i = 0;
+    while(!(bal)){
+        if(temp.at(i) <= def){
+            def = def - temp.at(i);
+            values.push_back(temp.at(i));
+            if(def == 0){
+                bal = true;
+            }
+        }
+        i++;
+    }
+
+    values.push_back(values.size());
+    return values;
+    
+}
+
+vector<pair<int,int>> Ship::find_container_location(){
+    vector<int> temp = sort_larger_mass();
+    int def = deficit();
+    vector<pair<int,int>> values;
+    bool bal = false;
+    int i = 0;
+    while(!(bal)){
+        if(temp.at(i) <= def){
+            def = def - temp.at(i);
+            string tmp = ret_larger_side();
+            vector<vector<int>> p = grid;
+            if(tmp == "left"){
+                for(int i = 0; i < p.size(); i++){
+                    for(int j = 0; j < p.at(0).size()/2; ++j){
+                        if(p.at(i).at(j) != -1){
+                            values.push_back(make_pair(i,j));
+                        }
+                    }
+                }
+            }
+            else if(tmp == "right"){
+                for(int i = 0; i < p.size(); i++){
+                    for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
+                        if(p.at(i).at(j) != -1){
+                            values.push_back(make_pair(i,j));
+                        }
+                    }
+                }
+            }
+      
+            if(def == 0){
+                bal = true;
+            }
+        }
+        i++;
+    }
+
+   // values.push_back(values.size());
+    return values;
+    
+}
+
+int Ship::find_nearest_col(){
+    // for each container, find the distance to next avalible column
+    //probably retrun an int (the column number)
+
+    int column = 0;
+    string tmp = ret_larger_side();
+    vector<vector<int>> p = grid;
+    if(tmp == "right"){
+        for(int j = (p.at(0).size()/2)-1; j > 0; j--){
+            for(int i = 0; i < p.size(); ++i){
+                if(p.at(i).at(j) == -1){
+                    return j;
+                }
+            }
+        }
+    }
+    else if(tmp == "left"){
+        for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
+            for(int i = 0; i < p.size(); ++i){
+                if(p.at(i).at(j) == -1){
+                    return j;
+                }
+            }
+        }
+    }
+    return column;
+}
+
+
+
+int Ship::calculate_hn(){
+    // What is needed to calculate Hn:
+    // 1) You need the number of moves that are needed to balance and the containers that need to be moved
+    // 2) You need to know what the first avalible column is
+    // *3) need to know what the first avalible row is in that column
+    vector<int> values = find_num_containers(); // remeber the last number is the number we need to move
+    vector<pair<int,int>> loc = find_container_location();
+    int nearest = find_nearest_col();
+    int sum = 0;
+
+    for(int i = 0; i < values.size()-1; i++){
+        for(int j = 0; j < loc.size(); j++){
+            if(values.at(i) == grid.at(loc.at(j).first).at(loc.at(j).second)){
+                sum = sum + abs(nearest - loc.at(j).second);
+            }
+        }
+    }
+
+    return sum;
+
 }
