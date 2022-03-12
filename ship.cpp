@@ -287,16 +287,28 @@ vector<int> Ship::sort_larger_mass(){
 vector<int> Ship::find_num_containers(){
     vector<int> temp = sort_larger_mass();
     int def = deficit();
+    double high_def = def/1.0 + (def * .1);
+    double low_def = def/1.0 - (def * .1);
     vector<int> values;
     bool bal = false;
     int i = 0;
+
+    cout <<  "High: " <<high_def << endl;
+    cout << "Low: " << low_def << endl;
+    cout << "Def: " << def << endl;
+
     while(!(bal)){
-        if(temp.at(i) <= def){
+        if(temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def){
+            low_def = low_def - temp.at(i);
+            high_def = high_def - temp.at(i);
             def = def - temp.at(i);
             values.push_back(temp.at(i));
             if(def == 0){
                 bal = true;
             }
+        }
+        if(i == temp.size()-1){
+            bal = true;
         }
         i++;
     }

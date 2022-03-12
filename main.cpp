@@ -32,7 +32,7 @@ int main(){
     cout << "NUM CONTAINERS: " << endl;
     vector<int> temp = problem->find_num_containers();
     for(int i = 0; i < temp.size();i++){
-        cout << temp.at(i) << " ";
+        cout << "Values: " << temp.at(i)/1.0 << " ";
     }
     cout << endl;
     cout << "Nearest Col: " << problem->find_nearest_col() << endl;
