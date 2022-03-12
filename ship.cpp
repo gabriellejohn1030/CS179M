@@ -13,17 +13,18 @@ Ship::Ship(){
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
         {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
-        {-1,-1,-1,-1,10,6,4,-1,-1,-1,-1,-1}    // 70 71 72 73 74 75
+        {10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
+        {20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
+        {32,12,-1,-1,10,6,4,-1,18,13,65,-1}    // 70 71 72 73 74 75
     };
     setUniqueKey();
-    
+    fN = 1;
 }
 
 Ship::Ship(vector<vector<int>> p){
     grid = p;
     setUniqueKey();
+    fN = 1;
 }
 
 void Ship::print(){
@@ -35,8 +36,8 @@ void Ship::print(){
     }
 }
 
-int Ship::find_mass_left(){
-    int sum = 0;
+double Ship::find_mass_left(){
+    double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = 0; j < grid.at(0).size()/2; ++j){
             if(grid.at(i).at(j) != -1){
@@ -44,12 +45,11 @@ int Ship::find_mass_left(){
             }
         }
     }
-
     return sum;
 }
 
-int Ship::find_mass_right(){
-    int sum = 0;
+double Ship::find_mass_right(){
+    double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = grid.at(0).size()/2; j < grid.at(0).size(); ++j){
             if(grid.at(i).at(j) != -1){
@@ -57,7 +57,6 @@ int Ship::find_mass_right(){
             }
         }
     }
-
     return sum;
 }
 

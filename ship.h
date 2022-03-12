@@ -21,8 +21,8 @@ class Ship{
         Ship();
         Ship(vector<vector<int>>);
         void print();
-        int find_mass_left();   //added change here
-        int find_mass_right();  //added change here
+        double find_mass_left();   //added change here
+        double find_mass_right();  //added change here
         int balance_mass();
         int deficit();
         void setUniqueKey();
@@ -34,6 +34,7 @@ class Ship{
         vector<pair<int,int>> find_container_location(); // added change here
         int find_nearest_col(); // added change here
         int calculate_hn(); // added change here
+        double getCost(){return fN;}
 };
 
 #endif
