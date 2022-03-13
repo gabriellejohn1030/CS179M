@@ -22,6 +22,8 @@ int main(){
     // cout << isGoalState(problem) << ' ' << problem->getCost() << endl;
 
     problem = loadManifest();
+    cout << "HN: "<< problem->calculate_hn() << endl;
+
 
     // vector<pair<int,int>> tmp = problem->pickUp();
     // cout << "here";
@@ -45,7 +47,7 @@ bool isGoalState(Ship* goal){
 Ship* loadManifest(){
     fstream file;
 
-    file.open("manifests/ShipCase5.txt");
+    file.open("manifests/ShipCase2.txt");
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;
@@ -68,7 +70,7 @@ Ship* loadManifest(){
     Ship* tmp = new Ship(grid);
 
     tmp->print();
-    return NULL;
+    return tmp;
 }
 
 vector<vector<Container*>> initializeVec(){
