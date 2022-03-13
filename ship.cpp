@@ -6,17 +6,17 @@ Ship* move_left(Ship*, pair<int, int> &);
 
 
 Ship::Ship(){
-    // grid = 
-    // {                                   // ij (row, column)
-    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 00 01 02 03 04 05 
-    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 10 11 12 13 14 15 
-    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
-    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
-    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
-    //     {10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
-    //     {20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
-    //     {32,12,-1,-1,10,6,4,-1,18,13,65,-1}    // 70 71 72 73 74 75
-    // };
+    grid = 
+    {                                   // ij (row, column)
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},      // 00 01 02 03 04 05 
+        {new Container(0, "UNUSED"),new Container(5, "UNUSED"),new Container(0, "UNUSED"),new Container(8, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(9, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")}      // 10 11 12 13 14 15 
+        // {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
+        // {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
+        // {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
+        // {10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
+        // {20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
+        // {32,12,-1,-1,10,6,4,-1,18,13,65,-1}    // 70 71 72 73 74 75
+    };
     setUniqueKey();
     fN = 1;
 }
@@ -34,6 +34,7 @@ void Ship::print(){
         }
         cout << endl;
     }
+    cout << endl;
 }
 
 double Ship::find_mass_left(){
@@ -123,7 +124,9 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
     int i = 0;
     
     while(size > 0){
+        // cout << "right" << endl;
         move = move_right(move, right);
+        // cout << "done" << endl;
         if(move == NULL){
             size--;
             continue;
@@ -139,6 +142,7 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
             size--;
             continue;
         }
+        move->print();
         children.push_back(move);
         size--;
     }
@@ -167,7 +171,7 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
                 idx.second = column;
                 return p;
             }
-            row++;
+            if(row < g.size()){row++;}
             while(row < p->grid.size()){ //moves crate to the very bottom or right before first occupied space in the column
                 if(g[row][column]->weight != -1){
                     swap(p->grid[row-1][column], p->grid[idx.first][idx.second]);
@@ -175,10 +179,11 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
                     idx.second = column;
                     return p;
                 }
-                row++;
+                if(row < g.size()){row++;}
+                else{break;}
             }
         }
-        row--;
+        if(row > 0){row--;}
         while(row > -1){ //edge case is if column is filled to the top
                 if(g[row][column]->weight == -1){
                     swap(p->grid[row][column], p->grid[idx.first][idx.second]);
@@ -186,7 +191,8 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
                     idx.second = column;
                     return p;
                 }
-                row--;
+                if(row > 0){row--;}
+                else{break;}
         }
     }
     return p;
@@ -198,7 +204,7 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
     }
     vector<vector<Container*>> g = p->grid;
     int row = idx.first;
-    int column = idx.second - 1;
+    int column = (idx.second > 0) ? idx.second - 1 : 0;
 
     for(int i = 0; i < idx.second; ++i){
         if(g[row][column]->weight == -1){
@@ -214,7 +220,7 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
                 idx.second = column;
                 return p;
             }
-            row++;
+            if(row < g.size()){row++;}
             while(row < p->grid.size()){ //moves crate to the very bottom or right before first occupied space in the column
                 if(g[row][column]->weight != -1){
                     swap(p->grid[row-1][column], p->grid[idx.first][idx.second]);
@@ -222,10 +228,11 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
                     idx.second = column;
                     return p;
                 }
-                row++;
+                if(row < g.size()){row++;}
+                else{break;}
             }
         }
-        row--;
+        if(row > 0){row--;}
         while(row > -1){ //edge case is if column is filled to the top
                 if(g[row][column]->weight == -1){
                     swap(p->grid[row][column], p->grid[idx.first][idx.second]);
@@ -233,7 +240,8 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
                     idx.second = column;
                     return p;
                 }
-                row--;
+                if(row > 0){row--;}
+                else{break;}
         }
     }
     return p;

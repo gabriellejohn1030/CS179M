@@ -10,10 +10,12 @@ class Container{
 
         Container(){}
         Container(int w, string c){  
-            if(w != 0){
-                weight = w;
-            }else{
+            if(c == "NAN"){
+                weight = -2;
+            }else if(w < 1){
                 weight = -1;
+            }else{
+                weight = w;
             }
             contents = c;
         }
