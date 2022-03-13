@@ -18,12 +18,13 @@ Ship::Ship(){
         {-1,-1,-1,-1,10,6,4,-1,-1,-1,-1,-1}    // 70 71 72 73 74 75
     };
     setUniqueKey();
-    
+    fN = 1;
 }
 
 Ship::Ship(vector<vector<int>> p){
     grid = p;
     setUniqueKey();
+    fN = 1;
 }
 
 void Ship::print(){
@@ -35,8 +36,8 @@ void Ship::print(){
     }
 }
 
-int Ship::find_mass_left(){
-    int sum = 0;
+double Ship::find_mass_left(){
+    double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = 0; j < grid.at(0).size()/2; ++j){
             if(grid.at(i).at(j) != -1){
@@ -44,12 +45,11 @@ int Ship::find_mass_left(){
             }
         }
     }
-
     return sum;
 }
 
-int Ship::find_mass_right(){
-    int sum = 0;
+double Ship::find_mass_right(){
+    double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = grid.at(0).size()/2; j < grid.at(0).size(); ++j){
             if(grid.at(i).at(j) != -1){
@@ -57,19 +57,18 @@ int Ship::find_mass_right(){
             }
         }
     }
-
     return sum;
 }
 
-int Ship::balance_mass(){
-    return (find_mass_left() + find_mass_right())/2;
+double Ship::balance_mass(){
+    return (find_mass_left() + find_mass_right())/2.0;
 }
 
-int Ship::deficit(){ // Balance Mass - smaller mass side 
-    int left = find_mass_left();
-    int right = find_mass_right();
-    int bal_mass = balance_mass();
-    int def = 0;
+double Ship::deficit(){ // Balance Mass - smaller mass side 
+    double left = find_mass_left();
+    double right = find_mass_right();
+    double bal_mass = balance_mass();
+    double def = 0.0;
     if(left > right){
         def = bal_mass - right;
     }
@@ -241,8 +240,8 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
 }
 
 string Ship::ret_larger_side(){
-    int left = find_mass_left();
-    int right = find_mass_right();
+    double left = find_mass_left();
+    double right = find_mass_right();
     string tmp = "";
 
     if(left > right){
@@ -256,9 +255,12 @@ string Ship::ret_larger_side(){
 }
 
 vector<int> Ship::sort_larger_mass(){
+     
     string tmp = ret_larger_side();
     vector<vector<int>> p = grid;
     vector<int> vec1;
+    // cout <<  "PSIZE: " <<p.size() << endl;
+    // cout << "AT 0 SIZE: " << p.at(0).size()/2 << endl;
     if(tmp == "left"){
         for(int i = 0; i < p.size(); i++){
             for(int j = 0; j < p.at(0).size()/2; ++j){
@@ -278,32 +280,63 @@ vector<int> Ship::sort_larger_mass(){
         }
     }
 
+    //cout << "HERE1" << endl;
     sort(vec1.begin(), vec1.end());
+    // cout << "HERE2" << endl;
     reverse(vec1.begin(), vec1.end());
+   // cout << "HERE3" << endl;
 
     return vec1;
 }
 
 vector<int> Ship::find_num_containers(){
     vector<int> temp = sort_larger_mass();
-    int def = deficit();
+    string tmp = ret_larger_side();
+    double def = deficit();
     double high_def = def/1.0 + (def * .1);
     double low_def = def/1.0 - (def * .1);
     vector<int> values;
     bool bal = false;
     int i = 0;
 
-    cout <<  "High: " <<high_def << endl;
-    cout << "Low: " << low_def << endl;
-    cout << "Def: " << def << endl;
+    cout << " THIS IS THE DEF: "<< def << endl;
+    cout << " THIS IS THE HIGH DEF: "<< high_def << endl;
+    cout << " THIS IS THE LOW DEF: "<< low_def << endl;
+    for(int j = 0; j < temp.size();j++){
+        cout << temp.at(j) << endl;
+    }
+    cout << endl;
+
+    double left = find_mass_left();
+    double right = find_mass_right();
+    double balance = 0;
+
+    cout << "LEFT: " << left << endl;
+    cout << "RIGHT: " << right << endl;
 
     while(!(bal)){
-        if(temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def){
+        if((temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def) || temp.at(i)/1.0 <= def){
             low_def = low_def - temp.at(i);
             high_def = high_def - temp.at(i);
             def = def - temp.at(i);
+            cout << "CALCULATIONS: " << def << endl;
             values.push_back(temp.at(i));
-            if(def == 0){
+            if(tmp == "left"){
+                left = left - temp.at(i);
+            }
+            if(tmp == "right"){
+                right = right - temp.at(i);
+            }
+
+            if(tmp == "left"){
+                right = right + temp.at(i);
+            }
+            if(tmp == "right"){
+                left = left + temp.at(i);
+            }
+
+            balance = min(left,right)/max(left,right) ;
+            if(balance >= .9){
                 bal = true;
             }
         }
@@ -313,6 +346,7 @@ vector<int> Ship::find_num_containers(){
         i++;
     }
 
+
     values.push_back(values.size());
     return values;
     
@@ -320,13 +354,22 @@ vector<int> Ship::find_num_containers(){
 
 vector<pair<int,int>> Ship::find_container_location(){
     vector<int> temp = sort_larger_mass();
-    int def = deficit();
+   
+    double def = deficit();
+    double high_def = def/1.0 + (def * .1);
+    double low_def = def/1.0 - (def * .1);
     vector<pair<int,int>> values;
     bool bal = false;
     int i = 0;
+
+    double left = find_mass_left();
+    double right = find_mass_right();
+    double balance = 0;
+
     while(!(bal)){
-        if(temp.at(i) <= def){
+        if((temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def) || temp.at(i)/1.0 <= def){
             def = def - temp.at(i);
+            
             string tmp = ret_larger_side();
             vector<vector<int>> p = grid;
             if(tmp == "left"){
@@ -347,10 +390,25 @@ vector<pair<int,int>> Ship::find_container_location(){
                     }
                 }
             }
-      
-            if(def == 0){
+            if(tmp == "left"){
+                left = left - temp.at(i);
+            }
+            if(tmp == "right"){
+                right = right - temp.at(i);
+            }
+             if(tmp == "left"){
+                right = right + temp.at(i);
+            }
+            if(tmp == "right"){
+                left = left + temp.at(i);
+            }
+            balance = min(left,right)/max(left,right);
+            if(balance >= .9){
                 bal = true;
             }
+        }
+        if(i == temp.size()-1){
+            bal = true;
         }
         i++;
     }
@@ -399,6 +457,8 @@ int Ship::calculate_hn(){
     vector<pair<int,int>> loc = find_container_location();
     int nearest = find_nearest_col();
     int sum = 0;
+
+    
 
     for(int i = 0; i < values.size()-1; i++){
         for(int j = 0; j < loc.size(); j++){
