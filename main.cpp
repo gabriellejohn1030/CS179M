@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <fstream>
 #include "ship.h"
 
 using namespace std;
 
 bool isGoalState(Ship*);
+vector<
 
 map<double, vector<vector<int>>> duplicate;
 
@@ -18,8 +20,6 @@ int main(){
     queue<Ship*> myShip;
 
     cout << isGoalState(problem) << ' ' << problem->getCost() << endl;
-
-
 
     return 0;
 }
@@ -33,3 +33,4 @@ bool isGoalState(Ship* goal){
 
     return (result >= 0.9); 
 }
+

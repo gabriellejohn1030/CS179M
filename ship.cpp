@@ -6,22 +6,22 @@ Ship* move_left(Ship*, pair<int, int> &);
 
 
 Ship::Ship(){
-    grid = 
-    {                                   // ij (row, column)
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 00 01 02 03 04 05 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 10 11 12 13 14 15 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
-        {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
-        {10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
-        {20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
-        {32,12,-1,-1,10,6,4,-1,18,13,65,-1}    // 70 71 72 73 74 75
-    };
+    // grid = 
+    // {                                   // ij (row, column)
+    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 00 01 02 03 04 05 
+    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 10 11 12 13 14 15 
+    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 20 21 22 23 24 25 
+    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 30 31 32 33 34 35 
+    //     {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 40 41 42 43 44 45 
+    //     {10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 50 51 52 53 54 55 
+    //     {20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},      // 60 61 62 63 64 65 
+    //     {32,12,-1,-1,10,6,4,-1,18,13,65,-1}    // 70 71 72 73 74 75
+    // };
     setUniqueKey();
     fN = 1;
 }
 
-Ship::Ship(vector<vector<int>> p){
+Ship::Ship(vector<vector<Container*>> p){
     grid = p;
     setUniqueKey();
     fN = 1;
@@ -30,7 +30,7 @@ Ship::Ship(vector<vector<int>> p){
 void Ship::print(){
     for(int i =0; i < grid.size(); ++i ){
         for(int j = 0; j < grid.at(0).size(); j++){
-            cout << grid.at(i).at(j) << '\t';
+            cout << grid.at(i).at(j)->weight << '\t';
         }
         cout << endl;
     }
@@ -40,8 +40,8 @@ double Ship::find_mass_left(){
     double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = 0; j < grid.at(0).size()/2; ++j){
-            if(grid.at(i).at(j) != -1){
-                sum = sum + grid.at(i).at(j);
+            if(grid.at(i).at(j)->weight != -1){
+                sum = sum + grid.at(i).at(j)->weight;
             }
         }
     }
@@ -52,8 +52,8 @@ double Ship::find_mass_right(){
     double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
         for(int j = grid.at(0).size()/2; j < grid.at(0).size(); ++j){
-            if(grid.at(i).at(j) != -1){
-                sum = sum + grid.at(i).at(j);
+            if(grid.at(i).at(j)->weight != -1){
+                sum = sum + grid.at(i).at(j)->weight;
             }
         }
     }
@@ -84,9 +84,9 @@ void Ship::setUniqueKey(){
     double key = 0;
 
     for(int i = 0; i < grid.size(); ++i){
-        vector<int> row = grid.at(i);
+        vector<Container*> row = grid.at(i);
         for(int j = 0; j < row.size(); ++j){
-            key += abs(sqrt(row.at(j)) * lock);
+            key += abs(sqrt(row.at(j)->weight) * lock);
             lock *= sqrt(key/100.0);
         }
     }
@@ -99,9 +99,9 @@ vector<pair<int,int>> Ship::pickUp(){
     vector<pair<int, int>> pickupIdxs(grid[0].size(), make_pair(-1, -1));
 
     for(int i = 0; i < grid.size(); ++i){
-        vector<int> row = grid[i];
+        vector<Container*> row = grid[i];
         for(int j = 0; j < row.size(); ++j){
-            if(grid[i][j] != -1 && filled[j] == -1){
+            if(grid[i][j]->weight != -1 && filled[j] == -1){
                 pickupIdxs[j] = make_pair(i, j);
                 filled[j] = 1;
             }
@@ -149,19 +149,19 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
     if(idx.second + 1 >= 12){
         return NULL;
     }
-    vector<vector<int>> g = p->grid;
+    vector<vector<Container*>> g = p->grid;
     int row = idx.first;
     int column = idx.second + 1;
 
     for(int i = 0; i < g.size(); ++i){
-        if(g[row][column] == -1){
+        if(g[row][column]->weight == -1){
             if(row + 1 >= g.size()){
                 swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                 idx.first = row;
                 idx.second = column;
                 return p;
             }
-            else if(g[row + 1][column] != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
+            else if(g[row + 1][column]->weight != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
                 swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                 idx.first = row;
                 idx.second = column;
@@ -169,7 +169,7 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
             }
             row++;
             while(row < p->grid.size()){ //moves crate to the very bottom or right before first occupied space in the column
-                if(g[row][column] != -1){
+                if(g[row][column]->weight != -1){
                     swap(p->grid[row-1][column], p->grid[idx.first][idx.second]);
                     idx.first = row-1;
                     idx.second = column;
@@ -180,7 +180,7 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
         }
         row--;
         while(row > -1){ //edge case is if column is filled to the top
-                if(g[row][column] == -1){
+                if(g[row][column]->weight == -1){
                     swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                     idx.first = row;
                     idx.second = column;
@@ -196,19 +196,19 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
     if(idx.second - 1 < 0){
         return NULL;
     }
-    vector<vector<int>> g = p->grid;
+    vector<vector<Container*>> g = p->grid;
     int row = idx.first;
     int column = idx.second - 1;
 
     for(int i = 0; i < idx.second; ++i){
-        if(g[row][column] == -1){
+        if(g[row][column]->weight == -1){
             if(row + 1 >= g.size()){
                 swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                 idx.first = row;
                 idx.second = column;
                 return p;
             }
-            else if(g[row + 1][column] != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
+            else if(g[row + 1][column]->weight != -1){ //check to make sure about row+1 in OR, otherwise g[row+1] is out of bounds
                 swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                 idx.first = row;
                 idx.second = column;
@@ -216,7 +216,7 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
             }
             row++;
             while(row < p->grid.size()){ //moves crate to the very bottom or right before first occupied space in the column
-                if(g[row][column] != -1){
+                if(g[row][column]->weight != -1){
                     swap(p->grid[row-1][column], p->grid[idx.first][idx.second]);
                     idx.first = row-1;
                     idx.second = column;
@@ -227,7 +227,7 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
         }
         row--;
         while(row > -1){ //edge case is if column is filled to the top
-                if(g[row][column] == -1){
+                if(g[row][column]->weight == -1){
                     swap(p->grid[row][column], p->grid[idx.first][idx.second]);
                     idx.first = row;
                     idx.second = column;
@@ -256,13 +256,13 @@ string Ship::ret_larger_side(){
 
 vector<int> Ship::sort_larger_mass(){
     string tmp = ret_larger_side();
-    vector<vector<int>> p = grid;
+    vector<vector<Container*>> p = grid;
     vector<int> vec1;
     if(tmp == "left"){
         for(int i = 0; i < p.size(); i++){
             for(int j = 0; j < p.at(0).size()/2; ++j){
-                if(p.at(i).at(j) != -1){
-                    vec1.push_back(p.at(i).at(j));
+                if(p.at(i).at(j)->weight != -1){
+                    vec1.push_back(p.at(i).at(j)->weight);
                 }
             }
         }
@@ -270,8 +270,8 @@ vector<int> Ship::sort_larger_mass(){
     else if(tmp == "right"){
         for(int i = 0; i < p.size(); i++){
             for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
-                if(p.at(i).at(j) != -1){
-                    vec1.push_back(p.at(i).at(j));
+                if(p.at(i).at(j)->weight != -1){
+                    vec1.push_back(p.at(i).at(j)->weight);
                 }
             }
         }
@@ -315,11 +315,11 @@ vector<pair<int,int>> Ship::find_container_location(){
         if(temp.at(i) <= def){
             def = def - temp.at(i);
             string tmp = ret_larger_side();
-            vector<vector<int>> p = grid;
+            vector<vector<Container*>> p = grid;
             if(tmp == "left"){
                 for(int i = 0; i < p.size(); i++){
                     for(int j = 0; j < p.at(0).size()/2; ++j){
-                        if(p.at(i).at(j) != -1){
+                        if(p.at(i).at(j)->weight != -1){
                             values.push_back(make_pair(i,j));
                         }
                     }
@@ -328,7 +328,7 @@ vector<pair<int,int>> Ship::find_container_location(){
             else if(tmp == "right"){
                 for(int i = 0; i < p.size(); i++){
                     for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
-                        if(p.at(i).at(j) != -1){
+                        if(p.at(i).at(j)->weight != -1){
                             values.push_back(make_pair(i,j));
                         }
                     }
@@ -353,11 +353,11 @@ int Ship::find_nearest_col(){
 
     int column = 0;
     string tmp = ret_larger_side();
-    vector<vector<int>> p = grid;
+    vector<vector<Container*>> p = grid;
     if(tmp == "right"){
         for(int j = (p.at(0).size()/2)-1; j > 0; j--){
             for(int i = 0; i < p.size(); ++i){
-                if(p.at(i).at(j) == -1){
+                if(p.at(i).at(j)->weight == -1){
                     return j;
                 }
             }
@@ -366,7 +366,7 @@ int Ship::find_nearest_col(){
     else if(tmp == "left"){
         for(int j = p.at(0).size()/2; j < p.at(0).size(); ++j){
             for(int i = 0; i < p.size(); ++i){
-                if(p.at(i).at(j) == -1){
+                if(p.at(i).at(j)->weight == -1){
                     return j;
                 }
             }
@@ -389,7 +389,7 @@ int Ship::calculate_hn(){
 
     for(int i = 0; i < values.size()-1; i++){
         for(int j = 0; j < loc.size(); j++){
-            if(values.at(i) == grid.at(loc.at(j).first).at(loc.at(j).second)){
+            if(values.at(i) == grid.at(loc.at(j).first).at(loc.at(j).second)->weight){
                 sum = sum + abs(nearest - loc.at(j).second);
             }
         }
