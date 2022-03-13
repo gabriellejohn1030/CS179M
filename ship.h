@@ -8,18 +8,19 @@
 #include <math.h>
 #include <map>
 #include <utility>
+#include "container.h"
 using namespace std;
 
 class Ship{
     public:
-        vector<vector<int>> grid;
+        vector<vector<Container*>> grid;
         double hN;
         double fN;
         double gN;
         double uniqueKey;
 
         Ship();
-        Ship(vector<vector<int>>);
+        Ship(vector<vector<Container*>>);
         void print();
         double find_mass_left();   //added change here
         double find_mass_right();  //added change here
