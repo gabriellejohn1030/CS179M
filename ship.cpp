@@ -88,17 +88,20 @@ double Ship::deficit(){ // Balance Mass - smaller mass side
 }
 
 void Ship::setUniqueKey(){
-    double lock = 1;
-    double key = 0;
+    double lock = 1.0;
+    double key = 0.0;
 
     for(int i = 0; i < grid.size(); ++i){
         vector<Container*> row = grid.at(i);
         for(int j = 0; j < row.size(); ++j){
-            key += abs(sqrt(row.at(j)->weight) * lock);
-            lock *= sqrt(key/100.0);
+            if(row.at(j)->weight > 0){
+                key += abs(sqrt(row.at(j)->weight) * lock);
+                lock *= sqrt(key/100.0);
+            }
         }
     }
     uniqueKey = key;
+    cout << "This is the value of uk: " << key << endl;
 }
 
 
@@ -299,11 +302,10 @@ vector<int> Ship::sort_larger_mass(){
         }
     }
 
-    //cout << "HERE1" << endl;
     sort(vec1.begin(), vec1.end());
-    // cout << "HERE2" << endl;
+
     reverse(vec1.begin(), vec1.end());
-   // cout << "HERE3" << endl;
+
 
     return vec1;
 }
@@ -322,27 +324,26 @@ vector<int> Ship::find_num_containers(){
     bool bal = false;
     int i = 0;
 
-    cout << " THIS IS THE DEF: "<< def << endl;
-    cout << " THIS IS THE HIGH DEF: "<< high_def << endl;
-    cout << " THIS IS THE LOW DEF: "<< low_def << endl;
-    for(int j = 0; j < temp.size();j++){
-        cout << temp.at(j) << endl;
-    }
-    cout << endl;
+    // cout << " THIS IS THE DEF: "<< def << endl;
+    // cout << " THIS IS THE HIGH DEF: "<< high_def << endl;
+    // cout << " THIS IS THE LOW DEF: "<< low_def << endl;
+    // for(int j = 0; j < temp.size();j++){
+    //     cout << temp.at(j) << endl;
+    // }
+    // cout << endl;
 
     double left = find_mass_left();
     double right = find_mass_right();
     double balance = 0;
 
-    cout << "LEFT: " << left << endl;
-    cout << "RIGHT: " << right << endl;
+    // cout << "LEFT: " << left << endl;
+    // cout << "RIGHT: " << right << endl;
 
     while(!(bal)){
         if((temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def) || temp.at(i)/1.0 <= def){
             low_def = low_def - temp.at(i);
             high_def = high_def - temp.at(i);
             def = def - temp.at(i);
-            cout << "CALCULATIONS: " << def << endl;
             values.push_back(temp.at(i));
             if(tmp == "left"){
                 left = left - temp.at(i);
@@ -484,7 +485,7 @@ void Ship::calculate_hn(){
 
     
 
-    for(int i = 0; i < values.size()-1; i++){
+    for(int i = 0; i < values.size(); i++){
         for(int j = 0; j < loc.size(); j++){
             if(values.at(i) == grid.at(loc.at(j).first).at(loc.at(j).second)->weight){
                 sum = sum + abs(nearest - loc.at(j).second);
@@ -494,6 +495,6 @@ void Ship::calculate_hn(){
 
     hN = sum;
     fN = hN + gN;
-    // return sum;
 
+    cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
 }

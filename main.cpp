@@ -5,25 +5,74 @@
 #include <map>
 #include <queue>
 #include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 #include "ship.h"
 
 using namespace std;
 
 bool isGoalState(Ship*);
 Ship* loadManifest();
+void emptyQueue(queue<Ship*> &);
+queue<Ship*> sortQueue(queue<Ship*>);
+void searchAlgorithm(queue<Ship*> &);
 vector<vector<Container*>> initializeVec();
 
 map<double, vector<vector<int>>> duplicate;
 
+int qSize = 0; // size of queue
+
 int main(){
     Ship *problem;
-    queue<Ship*> myShip;
-
-    // cout << isGoalState(problem) << ' ' << problem->getCost() << endl;
-
+    queue<Ship*> q;
+    
     problem = loadManifest();
-    cout << "HN: "<< problem->calculate_hn() << endl;
+      
+    q.push(problem);
+      
+    qSize = q.size();
+     
+    while(1){
+     
+      if(q.empty()){break;}
+      if(qSize < q.size()){qSize = q.size();}
+     
+      Ship* node = q.front();
 
+      vector<vector<int>> num_grid = 
+      {
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0}      
+
+      }; 
+
+      for(int i = 0; i < node->grid.size(); i++){
+       
+        for(int j = 0; j < node->grid.at(0).size(); j++){
+     
+          num_grid.at(i).at(j) = node->grid.at(i).at(j)->weight;
+
+        }
+
+      }
+      duplicate.insert(pair<double, vector<vector<int>>>(node->uniqueKey, num_grid)); //inserts node into the map
+
+      if(isGoalState(node)){
+        cout <<  "This is the fN value for the goal state" <<node->fN << endl;
+        break;
+      }
+
+      searchAlgorithm(q);
+
+    }
 
     // vector<pair<int,int>> tmp = problem->pickUp();
     // cout << "here";
@@ -34,7 +83,90 @@ int main(){
     return 0;
 }
 
+void emptyQueue(queue<Ship*> &q){
+  while(!q.empty()){
+    if(qSize < q.size()){
+        qSize = q.size();
+    } 
+    q.pop(); 
+  }
+}
+
+queue<Ship*> sortQueue(queue<Ship*> q){
+  vector<Ship*> tempQ;
+  Ship* temp;
+  vector<double> allFn;
+  cout << "HERE 2" << endl;
+  if(q.empty() || q.size() < 2){return q;}
+
+  while(!q.empty()){
+    temp = q.front();
+    tempQ.push_back(temp);
+    allFn.push_back(temp->fN);
+    q.pop();
+  }
+  for(int i = 0; i < allFn.size(); ++i){
+    for(int j = i+1; j < allFn.size(); ++j){
+      if(allFn.at(i) > allFn.at(j)){
+        swap(allFn.at(i), allFn.at(j));
+        swap(tempQ.at(i), tempQ.at(j));
+      }
+    }
+  }
+
+  for(int i = 0; i < tempQ.size(); ++i){
+      q.push(tempQ.at(i));
+  }
+
+  return q;
+
+}
+
+void searchAlgorithm(queue<Ship*> &q){
+  Ship* parent = q.front();
+  q.pop();
+
+  vector<pair<int,int>> pick_up_indexes = parent->pickUp();
+  vector<Ship*> children;
+  for(int i = 0; i < pick_up_indexes.size(); ++i){
+    vector<Ship*> drop_tmp = parent->dropDown(pick_up_indexes.at(i));
+    for(int j = 0; j < drop_tmp.size(); ++j){
+      children.push_back(drop_tmp.at(i));
+    }
+  }
+  
+
+  for(int i = 0; i < children.size();i++){
+    children.at(i)->calculate_hn();
+  }
+
+  for(int i = 0; i < children.size(); i++){
+    if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
+      children.erase(children.begin() + i);
+      --i;
+      continue;
+    }
+
+    if(isGoalState(children.at(i))){
+      emptyQueue(q);
+      return;
+    }
+
+    if(qSize < q.size()){qSize = q.size();}
+
+  }
+
+  for(int i = 0; i < children.size(); i++){
+    q.push(children.at(i));
+  }
+
+  q = sortQueue(q);
+
+  return;
+}
+
 bool isGoalState(Ship* goal){
+      cout << "HERE 3" << endl;
     double left = goal->find_mass_left();
     double right = goal->find_mass_right();
     double top = min(left, right);
