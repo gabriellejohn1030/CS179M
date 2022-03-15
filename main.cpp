@@ -16,9 +16,11 @@ using namespace std;
 bool isGoalState(Ship*);
 void outputGoalSteps(Ship*);
 Ship* loadManifest();
+void updateManifest(Ship*);
 void emptyQueue(queue<Ship*> &);
 queue<Ship*> sortQueue(queue<Ship*>);
-Ship* searchAlgorithm(queue<Ship*> &);
+Ship* balanceAlgorithm(queue<Ship*> &);
+Ship* unloadAlgorithm(vector<pair<int,int>> &, Ship*);
 vector<vector<Container*>> initializeVec();
 
 map<double, vector<vector<Container*>>> duplicate;
@@ -34,9 +36,10 @@ int main(){
     q.push(problem);
       
     qSize = q.size();
-     
+
+    vector<pair<int,int>> unload;
+
     while(1){
-    //   cout << q.size() << endl;
       if(q.empty()){break;}
       if(qSize < q.size()){qSize = q.size();}
      
@@ -50,7 +53,7 @@ int main(){
         break;
       }
       
-      Ship *goal = searchAlgorithm(q);
+      Ship *goal = balanceAlgorithm(q);
 
       if(goal != NULL){
           cout << "GOAL STATE FOUND" << endl;
@@ -59,12 +62,6 @@ int main(){
       }
 
     }
-
-    // vector<pair<int,int>> tmp = problem->pickUp();
-    // cout << "here";
-    // for(int i = 0; i < tmp.size(); ++i){
-    //     problem->dropDown(tmp[i]);
-    // }
 
     return 0;
 }
@@ -108,7 +105,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
 
 }
 
-Ship* searchAlgorithm(queue<Ship*> &q){
+Ship* balanceAlgorithm(queue<Ship*> &q){
   Ship* parent = q.front();
   q.pop();
 
@@ -120,15 +117,7 @@ Ship* searchAlgorithm(queue<Ship*> &q){
       children.push_back(drop_tmp.at(j));
     }
   }
-//   for(int i = 0; i < children.size(); i++){
-//       children.at(i)->print();
-//   }
 
-//   for(int i = 0; i < children.size();i++){
-//     if(children.at(i) == NULL){cout << "NULL FOUND" << endl; continue;}
-//     children.at(i)->calculate_hn();
-//     // children.at(i)->print();
-//   }
   for(int i = 0; i < children.size(); i++){
     if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
     //   cout << "called erase: " << children.size() << endl;
@@ -154,14 +143,11 @@ Ship* searchAlgorithm(queue<Ship*> &q){
 }
 
 bool isGoalState(Ship* goal){
-    // goal->print();
     double left = goal->find_mass_left();
     double right = goal->find_mass_right();
     double top = min(left, right);
     double bottom = max(left, right);
     double result = top/bottom;
-
-    // cout << "GOAL: " << (result >= 0.9) << endl;
 
     return (result >= 0.9); 
 }
@@ -210,6 +196,10 @@ Ship* loadManifest(){
     return tmp;
 }
 
+void updateManifest(Ship *p){
+
+}
+
 vector<vector<Container*>> initializeVec(){
     vector<vector<Container*>> tmp;
     tmp = {                                   // ij (row, column)
@@ -223,4 +213,8 @@ vector<vector<Container*>> initializeVec(){
         {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")}      // 70 71 72 73 74 75
     };
     return tmp;
+}
+
+Ship* unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p){
+    
 }
