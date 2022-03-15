@@ -18,18 +18,20 @@ class Ship{
         double fN;
         double gN;
         double uniqueKey;
+        //Ship* parent;
 
         Ship();
         Ship(vector<vector<Container*>>);
         Ship(Ship* p);
+        Ship(Ship*, int);
         void print();           
-        double find_mass_left();  
-        double find_mass_right();  
-        double balance_mass();     
-        double deficit();         
-        void setUniqueKey();        
-        vector<pair<int,int>> pickUp();     
-        vector<Ship*> dropDown(pair<int, int>);  
+        double find_mass_left();                            //find total mass of left side
+        double find_mass_right();                           //find total mass of right side
+        double balance_mass();                              //
+        double deficit();                                   //
+        void setUniqueKey();                                //gives the grid a unique number
+        vector<pair<int,int>> pickUp();                     //returns indexs of every container that can be picked up in every column
+        vector<Ship*> dropDown(pair<int, int>);             //returns all of the children of the picked up container
         string ret_larger_side();       
         vector<int> sort_larger_mass(); 
         vector<int> find_num_containers(); 

@@ -20,7 +20,7 @@ queue<Ship*> sortQueue(queue<Ship*>);
 void searchAlgorithm(queue<Ship*> &);
 vector<vector<Container*>> initializeVec();
 
-map<double, vector<vector<int>>> duplicate;
+map<double, vector<vector<Container*>>> duplicate;
 
 int qSize = 0; // size of queue
 
@@ -35,42 +35,42 @@ int main(){
     qSize = q.size();
      
     while(1){
-     
+      cout << q.size() << endl;
       if(q.empty()){break;}
       if(qSize < q.size()){qSize = q.size();}
      
       Ship* node = q.front();
 
-      vector<vector<int>> num_grid = 
-      {
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0}      
+    //   vector<vector<int>> num_grid = 
+    //   {
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0},
+    //     {0,0,0,0,0,0,0,0,0,0,0,0}      
+    //   }; 
 
-      }; 
-
-      for(int i = 0; i < node->grid.size(); i++){
+    //   for(int i = 0; i < node->grid.size(); i++){
        
-        for(int j = 0; j < node->grid.at(0).size(); j++){
+    //     for(int j = 0; j < node->grid.at(0).size(); j++){
      
-          num_grid.at(i).at(j) = node->grid.at(i).at(j)->weight;
+    //       num_grid.at(i).at(j) = node->grid.at(i).at(j)->weight;
 
-        }
+    //     }
 
-      }
-      duplicate.insert(pair<double, vector<vector<int>>>(node->uniqueKey, num_grid)); //inserts node into the map
+    //   }
+      duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
 
       if(isGoalState(node)){
         cout <<  "This is the fN value for the goal state" <<node->fN << endl;
         break;
       }
-
+      cout << "Entering Search" << endl;
       searchAlgorithm(q);
+      cout << "Exiting Search" << endl;
 
     }
 
@@ -96,7 +96,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
   vector<Ship*> tempQ;
   Ship* temp;
   vector<double> allFn;
-  cout << "HERE 2" << endl;
+  
   if(q.empty() || q.size() < 2){return q;}
 
   while(!q.empty()){
@@ -131,17 +131,21 @@ void searchAlgorithm(queue<Ship*> &q){
   for(int i = 0; i < pick_up_indexes.size(); ++i){
     vector<Ship*> drop_tmp = parent->dropDown(pick_up_indexes.at(i));
     for(int j = 0; j < drop_tmp.size(); ++j){
-      children.push_back(drop_tmp.at(i));
+      children.push_back(drop_tmp.at(j));
     }
   }
-  
+//   for(int i = 0; i < children.size(); i++){
+//       children.at(i)->print();
+//   }
 
   for(int i = 0; i < children.size();i++){
+    if(children.at(i) == NULL){cout << "NULL FOUND" << endl; continue;}
     children.at(i)->calculate_hn();
+    // children.at(i)->print();
   }
-
   for(int i = 0; i < children.size(); i++){
     if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
+    //   cout << "called erase: " << children.size() << endl;
       children.erase(children.begin() + i);
       --i;
       continue;
@@ -149,29 +153,31 @@ void searchAlgorithm(queue<Ship*> &q){
 
     if(isGoalState(children.at(i))){
       emptyQueue(q);
+      cout << "CALLED GOAL STATE IN SEARCH" << endl;
+      //dont we want to return the goal state somewhere here?
       return;
     }
 
     if(qSize < q.size()){qSize = q.size();}
 
   }
-
   for(int i = 0; i < children.size(); i++){
     q.push(children.at(i));
   }
-
   q = sortQueue(q);
 
   return;
 }
 
 bool isGoalState(Ship* goal){
-      cout << "HERE 3" << endl;
+    goal->print();
     double left = goal->find_mass_left();
     double right = goal->find_mass_right();
     double top = min(left, right);
     double bottom = max(left, right);
     double result = top/bottom;
+
+    cout << "GOAL: " << (result >= 0.9) << endl;
 
     return (result >= 0.9); 
 }

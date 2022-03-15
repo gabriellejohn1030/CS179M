@@ -33,6 +33,12 @@ Ship::Ship(Ship* p){
     gN = p->gN + 1;
 }
 
+Ship::Ship(Ship* p, int fyou){
+    grid = p->grid;
+    setUniqueKey();
+    gN = p->gN;
+}
+
 void Ship::print(){
     for(int i =0; i < grid.size(); ++i ){
         for(int j = 0; j < grid.at(0).size(); j++){
@@ -96,12 +102,13 @@ void Ship::setUniqueKey(){
         for(int j = 0; j < row.size(); ++j){
             if(row.at(j)->weight > 0){
                 key += abs(sqrt(row.at(j)->weight) * lock);
-                lock *= sqrt(key/100.0);
+                lock *= sqrt(key/2.0);
             }
         }
     }
     uniqueKey = key;
-    cout << "This is the value of uk: " << key << endl;
+    // cout << "This is the value of uk: " << key << endl;
+    // this->print();
 }
 
 
@@ -126,7 +133,7 @@ vector<pair<int,int>> Ship::pickUp(){
 }
 
 vector<Ship*> Ship::dropDown(pair<int, int> idx){
-    vector<Ship *> children;
+    vector<Ship*> children;
     Ship *move = new Ship(grid);
     pair<int, int> left = idx;
     pair<int, int> right = idx;
@@ -134,14 +141,13 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
     int i = 0;
     
     while(size > 0){
-        // cout << "right" << endl;
         move = move_right(move, right);
         // cout << "done" << endl;
         if(move == NULL){
             size--;
             continue;
         }
-        children.push_back(move);
+        children.push_back(new Ship(move, 0));
         size--;
     }
     size = 12;
@@ -152,10 +158,13 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
             size--;
             continue;
         }
-        move->print();
-        children.push_back(move);
+        children.push_back(new Ship(move, 0));
         size--;
     }
+    
+    // for(int i = 0; i < children.size(); ++i){
+    //     children.at(i)->print();
+    // }
     return children;
 }
 
@@ -258,9 +267,7 @@ Ship* move_left(Ship *p, pair<int, int> &idx){
 }
 
 string Ship::ret_larger_side(){
-    
     double left = find_mass_left();
-   
     double right = find_mass_right();
     
     string tmp = "";
@@ -276,7 +283,6 @@ string Ship::ret_larger_side(){
 }
 
 vector<int> Ship::sort_larger_mass(){
-   
     string tmp = ret_larger_side();
     
     vector<vector<Container*>> p = grid;
@@ -311,13 +317,10 @@ vector<int> Ship::sort_larger_mass(){
 }
 
 vector<int> Ship::find_num_containers(){
-    
     vector<int> temp = sort_larger_mass();
-   
     string tmp = ret_larger_side();
     
     double def = deficit();
-   
     double high_def = def/1.0 + (def * .1);
     double low_def = def/1.0 - (def * .1);
     vector<int> values;
@@ -496,5 +499,5 @@ void Ship::calculate_hn(){
     hN = sum;
     fN = hN + gN;
 
-    cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
+    // cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
 }
