@@ -36,7 +36,7 @@ int main(){
     qSize = q.size();
      
     while(1){
-      cout << q.size() << endl;
+    //   cout << q.size() << endl;
       if(q.empty()){break;}
       if(qSize < q.size()){qSize = q.size();}
      
@@ -45,7 +45,7 @@ int main(){
       duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
 
       if(isGoalState(node)){
-        cout <<  "This is the fN value for the goal state" <<node->fN << endl;
+        cout << "GOAL STATE FOUND" << endl;
         outputGoalSteps(node);
         break;
       }
@@ -139,8 +139,6 @@ Ship* searchAlgorithm(queue<Ship*> &q){
 
     if(isGoalState(children.at(i))){
       emptyQueue(q);
-      cout << "CALLED GOAL STATE IN SEARCH" << endl;
-      //dont we want to return the goal state somewhere here?
       return children.at(i);
     }
 
@@ -171,7 +169,7 @@ bool isGoalState(Ship* goal){
 void outputGoalSteps(Ship *goal){
     vector<Ship*> steps;
     Ship* tmp = goal;
-    cout << "Fn: " << goal->fN << endl;
+    
     while(tmp != NULL){
         steps.push_back(tmp);
         tmp = tmp->parent;
@@ -186,7 +184,7 @@ void outputGoalSteps(Ship *goal){
 Ship* loadManifest(){
     fstream file;
 
-    file.open("manifests/ShipCase3.txt");
+    file.open("manifests/ShipCase2.txt");
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;
@@ -208,7 +206,7 @@ Ship* loadManifest(){
     reverse(grid.begin(), grid.end());
     Ship* tmp = new Ship(grid);
 
-    tmp->print();
+    // tmp->print();
     return tmp;
 }
 
