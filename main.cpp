@@ -37,31 +37,38 @@ int main(){
       
     qSize = q.size();
 
-    vector<pair<int,int>> unload;
+    vector<pair<int,int>> unload = {make_pair(6,0), make_pair(6,1)};
+    // vector<pair<int,int>> tmp = problem->pickUp();
 
-    while(1){
-      if(q.empty()){break;}
-      if(qSize < q.size()){qSize = q.size();}
+    // for(int i = 0; i < tmp.size(); ++i){
+    //     cout << tmp[i].first << ' ' << tmp[i].second << endl;
+    // }
+    // problem->print();
+    unloadAlgorithm(unload, problem);
+
+    // while(1){
+    //   if(q.empty()){break;}
+    //   if(qSize < q.size()){qSize = q.size();}
      
-      Ship* node = q.front();
+    //   Ship* node = q.front();
 
-      duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
+    //   duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
 
-      if(isGoalState(node)){
-        cout << "GOAL STATE FOUND" << endl;
-        outputGoalSteps(node);
-        break;
-      }
+    //   if(isGoalState(node)){
+    //     cout << "GOAL STATE FOUND" << endl;
+    //     outputGoalSteps(node);
+    //     break;
+    //   }
       
-      Ship *goal = balanceAlgorithm(q);
+    //   Ship *goal = balanceAlgorithm(q);
 
-      if(goal != NULL){
-          cout << "GOAL STATE FOUND" << endl;
-          outputGoalSteps(goal);
-          break;
-      }
+    //   if(goal != NULL){
+    //       cout << "GOAL STATE FOUND" << endl;
+    //       outputGoalSteps(goal);
+    //       break;
+    //   }
 
-    }
+    // }
 
     return 0;
 }
@@ -170,7 +177,7 @@ void outputGoalSteps(Ship *goal){
 Ship* loadManifest(){
     fstream file;
 
-    file.open("manifests/ShipCase2.txt");
+    file.open("manifests/ShipCase3.txt");
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;
@@ -216,5 +223,20 @@ vector<vector<Container*>> initializeVec(){
 }
 
 Ship* unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p){
-    
+    p->print();
+    for(int i = 0; i < idxs.size(); ++i){
+        vector<Ship*> tmp = p->unloadContainer(idxs, i);
+        idxs.erase(idxs.begin()+i);
+        --i;
+        for(int j = 0; j < tmp.size(); ++j){
+            if(tmp.at(j) == NULL && j == tmp.size()-1){
+                cout << "TRUCK" << endl;
+            } else if(tmp.at(j) == NULL){
+                cout << "BUFFER" << endl;
+            } else{
+                tmp.at(j)->print();
+            }
+        }
+        cout << "END OF THIS MOVE" << endl << endl << endl;
+    }
 }

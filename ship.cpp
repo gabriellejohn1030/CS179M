@@ -3,6 +3,7 @@ using namespace std;
 
 Ship* move_right(Ship*, pair<int, int> &);
 Ship* move_left(Ship*, pair<int, int> &);
+int containersAbove(Ship*, pair<int, int>);
 
 
 Ship::Ship(){
@@ -173,6 +174,60 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
         children.at(i)->parent = this;
     }
     return children;
+}
+
+vector<Ship*> Ship::unloadContainer(vector<pair<int, int>> allCont, int index){
+    vector<Ship*> children;
+    pair<int,int> idx = allCont[index];
+    Ship *move = new Ship(grid);
+    int above = containersAbove(this, idx);
+    bool isAboveContainerToUnload = true;
+
+    cout << "ABOVE: " << above << endl;
+
+    while(above > 0){
+        pair<int, int> idxOfTopContainer = make_pair(idx.first-above,idx.second);
+        
+        cout << "idxoftop: " << idxOfTopContainer.first << idxOfTopContainer.second << endl;
+        move = move_left(move, idxOfTopContainer);
+        isAboveContainerToUnload = true;
+        
+        if(move == NULL){
+            children.push_back(NULL);
+            above--;
+            continue;
+        }
+        while(isAboveContainerToUnload){
+            isAboveContainerToUnload = false;
+            for(int i = 0; i < allCont.size(); ++i){
+                if(allCont[i].second == idxOfTopContainer.second){
+                    isAboveContainerToUnload = true;
+                    break;
+                }
+            }
+            if(isAboveContainerToUnload){
+                move = move_left(move, idxOfTopContainer);
+                if(move == NULL){
+                    children.push_back(NULL);
+                    break;
+                }
+            }
+        }
+        children.push_back(new Ship(move, 0));        
+        above--;
+    }
+    children.push_back(NULL);
+    return children;
+}
+
+int containersAbove(Ship* p, pair<int, int> idx){
+    int cnt = 0;
+    for(int i = 0; i < idx.first; ++i){
+        if(p->grid[i][idx.second]->weight != -1){
+            ++cnt;
+        }
+    }
+    return cnt;
 }
 
 Ship* move_right(Ship *p, pair<int, int> &idx){
