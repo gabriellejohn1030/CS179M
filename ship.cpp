@@ -19,24 +19,31 @@ Ship::Ship(){
     };
     setUniqueKey();
     fN = 1;
+    parent = NULL;
+    //calculate_hn();
 }
 
 Ship::Ship(vector<vector<Container*>> p){
     grid = p;
+    parent = NULL;
     setUniqueKey();
-    fN = 1;
+    calculate_hn();
 }
 
 Ship::Ship(Ship* p){
     grid = p->grid;
-    setUniqueKey();
+    parent = NULL;
     gN = p->gN + 1;
+    calculate_hn();
+    setUniqueKey();
 }
 
 Ship::Ship(Ship* p, int fyou){
     grid = p->grid;
-    setUniqueKey();
     gN = p->gN;
+    setUniqueKey();
+    calculate_hn();
+    parent = NULL;
 }
 
 void Ship::print(){
@@ -162,9 +169,9 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
         size--;
     }
     
-    // for(int i = 0; i < children.size(); ++i){
-    //     children.at(i)->print();
-    // }
+    for(int i = 0; i < children.size(); ++i){
+        children.at(i)->parent = this;
+    }
     return children;
 }
 

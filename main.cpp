@@ -14,10 +14,11 @@
 using namespace std;
 
 bool isGoalState(Ship*);
+void outputGoalSteps(Ship*);
 Ship* loadManifest();
 void emptyQueue(queue<Ship*> &);
 queue<Ship*> sortQueue(queue<Ship*>);
-void searchAlgorithm(queue<Ship*> &);
+Ship* searchAlgorithm(queue<Ship*> &);
 vector<vector<Container*>> initializeVec();
 
 map<double, vector<vector<Container*>>> duplicate;
@@ -41,36 +42,21 @@ int main(){
      
       Ship* node = q.front();
 
-    //   vector<vector<int>> num_grid = 
-    //   {
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0},
-    //     {0,0,0,0,0,0,0,0,0,0,0,0}      
-    //   }; 
-
-    //   for(int i = 0; i < node->grid.size(); i++){
-       
-    //     for(int j = 0; j < node->grid.at(0).size(); j++){
-     
-    //       num_grid.at(i).at(j) = node->grid.at(i).at(j)->weight;
-
-    //     }
-
-    //   }
       duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
 
       if(isGoalState(node)){
         cout <<  "This is the fN value for the goal state" <<node->fN << endl;
+        outputGoalSteps(node);
         break;
       }
-      cout << "Entering Search" << endl;
-      searchAlgorithm(q);
-      cout << "Exiting Search" << endl;
+      
+      Ship *goal = searchAlgorithm(q);
+
+      if(goal != NULL){
+          cout << "GOAL STATE FOUND" << endl;
+          outputGoalSteps(goal);
+          break;
+      }
 
     }
 
@@ -122,7 +108,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
 
 }
 
-void searchAlgorithm(queue<Ship*> &q){
+Ship* searchAlgorithm(queue<Ship*> &q){
   Ship* parent = q.front();
   q.pop();
 
@@ -138,11 +124,11 @@ void searchAlgorithm(queue<Ship*> &q){
 //       children.at(i)->print();
 //   }
 
-  for(int i = 0; i < children.size();i++){
-    if(children.at(i) == NULL){cout << "NULL FOUND" << endl; continue;}
-    children.at(i)->calculate_hn();
-    // children.at(i)->print();
-  }
+//   for(int i = 0; i < children.size();i++){
+//     if(children.at(i) == NULL){cout << "NULL FOUND" << endl; continue;}
+//     children.at(i)->calculate_hn();
+//     // children.at(i)->print();
+//   }
   for(int i = 0; i < children.size(); i++){
     if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
     //   cout << "called erase: " << children.size() << endl;
@@ -155,7 +141,7 @@ void searchAlgorithm(queue<Ship*> &q){
       emptyQueue(q);
       cout << "CALLED GOAL STATE IN SEARCH" << endl;
       //dont we want to return the goal state somewhere here?
-      return;
+      return children.at(i);
     }
 
     if(qSize < q.size()){qSize = q.size();}
@@ -166,26 +152,41 @@ void searchAlgorithm(queue<Ship*> &q){
   }
   q = sortQueue(q);
 
-  return;
+  return NULL;
 }
 
 bool isGoalState(Ship* goal){
-    goal->print();
+    // goal->print();
     double left = goal->find_mass_left();
     double right = goal->find_mass_right();
     double top = min(left, right);
     double bottom = max(left, right);
     double result = top/bottom;
 
-    cout << "GOAL: " << (result >= 0.9) << endl;
+    // cout << "GOAL: " << (result >= 0.9) << endl;
 
     return (result >= 0.9); 
+}
+
+void outputGoalSteps(Ship *goal){
+    vector<Ship*> steps;
+    Ship* tmp = goal;
+    cout << "Fn: " << goal->fN << endl;
+    while(tmp != NULL){
+        steps.push_back(tmp);
+        tmp = tmp->parent;
+    }
+    reverse(steps.begin(), steps.end());
+    for(int i = 0; i < steps.size(); ++i){
+        steps.at(i)->print();
+    }
+    return;
 }
 
 Ship* loadManifest(){
     fstream file;
 
-    file.open("manifests/ShipCase2.txt");
+    file.open("manifests/ShipCase3.txt");
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;

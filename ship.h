@@ -18,7 +18,7 @@ class Ship{
         double fN;
         double gN;
         double uniqueKey;
-        //Ship* parent;
+        Ship* parent;
 
         Ship();
         Ship(vector<vector<Container*>>);
