@@ -39,6 +39,7 @@ class Ship{
         Ship* move_right(Ship*, pair<int, int> &);
         Ship* move_left(Ship*, pair<int, int> &);
         Ship* getParent() { return parent; }
+        int containersAbove(Ship*, pair<int, int>);
 
         void print();
         void setUniqueKey();                                //gives the grid a unique number

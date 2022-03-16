@@ -52,6 +52,61 @@ void Ship::print(){
 
 }
 
+vector<Ship*> Ship::unloadContainer(vector<pair<int, int>> allCont, int index){
+    vector<Ship*> children;
+    pair<int,int> idx = allCont[index];
+    Ship *move = new Ship(grid);
+    int above = containersAbove(this, idx);
+    bool isAboveContainerToUnload = true;
+
+    cout << "ABOVE: " << above << endl;
+
+    while(above > 0){
+        pair<int, int> idxOfTopContainer = make_pair(idx.first-above,idx.second);
+        
+        cout << "idxoftop: " << idxOfTopContainer.first << idxOfTopContainer.second << endl;
+        move = move_left(move, idxOfTopContainer);
+        isAboveContainerToUnload = true;
+        
+        if(move == NULL){
+            children.push_back(NULL);
+            above--;
+            continue;
+        }
+        while(isAboveContainerToUnload){
+            isAboveContainerToUnload = false;
+            for(int i = 0; i < allCont.size(); ++i){
+                if(allCont[i].second == idxOfTopContainer.second){
+                    isAboveContainerToUnload = true;
+                    break;
+                }
+            }
+            if(isAboveContainerToUnload){
+                move = move_left(move, idxOfTopContainer);
+                if(move == NULL){
+                    children.push_back(NULL);
+                    break;
+                }
+            }
+        }
+        children.push_back(new Ship(move, 0));        
+        above--;
+    }
+    children.push_back(NULL);
+    return children;
+}
+
+int Ship::containersAbove(Ship* p, pair<int, int> idx){
+    int cnt = 0;
+    for(int i = 0; i < idx.first; ++i){
+        if(p->grid[i][idx.second]->weight != -1){
+            ++cnt;
+        }
+    }
+    return cnt;
+}
+
+
 double Ship::find_mass_left(){
     double sum = 0.0;
     for(int i = 0; i < grid.size(); i++){
@@ -163,7 +218,6 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
         children.push_back(new Ship(move, 0));
         size--;
     }
-
     for(int i = 0; i < children.size(); ++i){
         children.at(i)->parent = this;
     }
@@ -271,7 +325,6 @@ Ship* Ship::move_left(Ship *p, pair<int, int> &idx){
 string Ship::ret_larger_side(){
     double left = find_mass_left();
     double right = find_mass_right();
-
     string tmp = "";
 
     if(left > right){
@@ -286,7 +339,6 @@ string Ship::ret_larger_side(){
 
 vector<int> Ship::sort_larger_mass(){
     string tmp = ret_larger_side();
-
     vector<vector<Container*>> p = grid;
     vector<int> vec1;
     // cout <<  "PSIZE: " <<p.size() << endl;
@@ -319,7 +371,6 @@ vector<int> Ship::sort_larger_mass(){
 vector<int> Ship::find_num_containers(){
     vector<int> temp = sort_larger_mass();
     string tmp = ret_larger_side();
-
     double def = deficit();
     double high_def = def/1.0 + (def * .1);
     double low_def = def/1.0 - (def * .1);
@@ -376,12 +427,10 @@ vector<int> Ship::find_num_containers(){
 
     values.push_back(values.size());
     return values;
-
 }
 
 vector<pair<int,int>> Ship::find_container_location(){
     vector<int> temp = sort_larger_mass();
-
     double def = deficit();
     double high_def = def/1.0 + (def * .1);
     double low_def = def/1.0 - (def * .1);
@@ -396,7 +445,6 @@ vector<pair<int,int>> Ship::find_container_location(){
     while(!(bal)){
         if((temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def) || temp.at(i)/1.0 <= def){
             def = def - temp.at(i);
-
             string tmp = ret_larger_side();
             vector<vector<Container*>> p = grid;
             if(tmp == "left"){
@@ -442,7 +490,6 @@ vector<pair<int,int>> Ship::find_container_location(){
 
    // values.push_back(values.size());
     return values;
-
 }
 
 int Ship::find_nearest_col(){
