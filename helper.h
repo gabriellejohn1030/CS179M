@@ -19,6 +19,8 @@ class helper : public QObject {
         Ship* searchAlgorithm(queue<Ship*> &);
         vector<vector<Container*>> initializeVec();
         void balance(Ship *problem);
+        Ship* unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p);
+
     signals:
         void balanceFinished(bool success);
 

@@ -60,6 +60,7 @@ class Ship{
         vector<int> find_num_containers();
         vector<pair<int,int>> find_container_location();
         vector<vector<Container*>> getGrid() { return grid; }
+        vector<Ship*> unloadContainer(vector<pair<int, int>> allCont, int index);
 
         string ret_larger_side();
 

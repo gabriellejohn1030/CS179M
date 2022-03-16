@@ -175,3 +175,23 @@ void helper::balance(Ship *problem) {
     emit balanceFinished(false);
     return;
 }
+
+
+Ship* helper::unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p){
+    p->print();
+    for(int i = 0; i < idxs.size(); ++i){
+        vector<Ship*> tmp = p->unloadContainer(idxs, i);
+        idxs.erase(idxs.begin()+i);
+        --i;
+        for(int j = 0; j < tmp.size(); ++j){
+            if(tmp.at(j) == NULL && j == tmp.size()-1){
+                cout << "TRUCK" << endl;
+            } else if(tmp.at(j) == NULL){
+                cout << "BUFFER" << endl;
+            } else{
+                tmp.at(j)->print();
+            }
+        }
+        cout << "END OF THIS MOVE" << endl << endl << endl;
+    }
+}
