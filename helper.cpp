@@ -102,13 +102,13 @@ void helper::outputGoalSteps(Ship *goal){
     return;
 }
 
-Ship* helper::loadManifest(string fileName){
+Ship* helper::(string fileName){
     fstream file;
 
     file.open(fileName);
     if(!file.is_open()){
         qDebug() << "FAILED LOADING MANIFEST";
-        return NULL;
+        return nullptr;
     }
     vector<vector<Container*>> grid = initializeVec();
     string idx, weight, content;
@@ -149,28 +149,32 @@ vector<vector<Container*>> helper::initializeVec(){
 void helper::balance(Ship *problem) {
     queue<Ship*> q;
     q.push(problem);
+    // if we are not using sift, first if, else we are doing sift
+    if (!problem->check_SIFT()) {
+        while(!q.empty()){
+          qSize = max(qSize, q.size());
+          Ship* node = q.front();
 
-    while(!q.empty()){
-      qSize = max(qSize, q.size());
-      Ship* node = q.front();
+          duplicate.insert(pair<double, vector<vector<Container*>>>(node->getUniqueKey(), node->getGrid())); //inserts node into the map
 
-      duplicate.insert(pair<double, vector<vector<Container*>>>(node->getUniqueKey(), node->getGrid())); //inserts node into the map
+          if (isGoalState(node)){
+            qDebug() << "GOAL STATE FOUND";
+            outputGoalSteps(node);
+            emit balanceFinished(true);
+            return;
+          }
 
-      if (isGoalState(node)){
-        qDebug() << "GOAL STATE FOUND";
-        outputGoalSteps(node);
-        emit balanceFinished(true);
-        return;
-      }
+          Ship *goal = searchAlgorithm(q);
 
-      Ship *goal = searchAlgorithm(q);
-
-      if(goal != NULL){
-          qDebug() << "GOAL STATE FOUND";
-          outputGoalSteps(goal);
-          emit balanceFinished(true);
-          return;
-      }
+          if(goal != NULL){
+              qDebug() << "GOAL STATE FOUND";
+              outputGoalSteps(goal);
+              emit balanceFinished(true);
+              return;
+          }
+        }
+    } else {
+        // do sift down here
     }
     emit balanceFinished(false);
     return;

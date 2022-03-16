@@ -54,6 +54,8 @@ class Ship{
 
         int find_nearest_col();
 
+        bool check_SIFT();
+
         vector<pair<int,int>> pickUp();                     //returns indexs of every container that can be picked up in every column
         vector<Ship*> dropDown(pair<int, int>);             //returns all of the children of the picked up container
         vector<int> sort_larger_mass();
@@ -61,7 +63,6 @@ class Ship{
         vector<pair<int,int>> find_container_location();
         vector<vector<Container*>> getGrid() { return grid; }
         vector<Ship*> unloadContainer(vector<pair<int, int>> allCont, int index);
-
         string ret_larger_side();
 
     private:

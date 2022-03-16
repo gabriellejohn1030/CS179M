@@ -544,3 +544,26 @@ void Ship::calculate_hn(){
 
     // cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
 }
+
+bool Ship::check_SIFT(){
+    bool check = false;
+    double sum = 0;
+    double def = deficit();
+    double high_def = def/1.0 + (def * .1);
+    double low_def = def/1.0 - (def * .1);
+
+    int sz = find_num_containers().size();
+    vector<int> contain = find_num_containers();
+    for(int i = 0; i < sz-1; i++){
+        sum = sum + contain.at(i);
+    }
+
+    if(sum >= low_def && sum <= high_def){
+        check = false;
+    }
+    else{
+        check = true;
+    }
+
+    return check;
+}
