@@ -294,8 +294,7 @@ vector<int> Ship::sort_larger_mass(){
     
     vector<vector<Container*>> p = grid;
     vector<int> vec1;
-    // cout <<  "PSIZE: " <<p.size() << endl;
-    // cout << "AT 0 SIZE: " << p.at(0).size()/2 << endl;
+    
     if(tmp == "left"){
         for(int i = 0; i < p.size(); i++){
             for(int j = 0; j < p.at(0).size()/2; ++j){
@@ -334,20 +333,9 @@ vector<int> Ship::find_num_containers(){
     bool bal = false;
     int i = 0;
 
-    // cout << " THIS IS THE DEF: "<< def << endl;
-    // cout << " THIS IS THE HIGH DEF: "<< high_def << endl;
-    // cout << " THIS IS THE LOW DEF: "<< low_def << endl;
-    // for(int j = 0; j < temp.size();j++){
-    //     cout << temp.at(j) << endl;
-    // }
-    // cout << endl;
-
     double left = find_mass_left();
     double right = find_mass_right();
     double balance = 0;
-
-    // cout << "LEFT: " << left << endl;
-    // cout << "RIGHT: " << right << endl;
 
     while(!(bal)){
         if((temp.at(i)/1.0 >= low_def && temp.at(i)/1.0 <= high_def) || temp.at(i)/1.0 <= def){
@@ -487,10 +475,20 @@ void Ship::calculate_hn(){
     // 1) You need the number of moves that are needed to balance and the containers that need to be moved
     // 2) You need to know what the first avalible column is
     // *3) need to know what the first avalible row is in that column
+    int empty_check = 0;
+    empty_check = empty_check + find_mass_left();
+    empty_check = empty_check + find_mass_right();
+    if(empty_check == 0){
+        hN = 0;
+        fN = hN + gN;
+        return;
+    }
     vector<int> values = find_num_containers(); // remeber the last number is the number we need to move
+     
     vector<pair<int,int>> loc = find_container_location();
-
+ 
     int nearest = find_nearest_col();
+    
     int sum = 0;
 
     
@@ -507,4 +505,29 @@ void Ship::calculate_hn(){
     fN = hN + gN;
 
     // cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
+}
+
+
+
+bool Ship::check_SIFT(){
+    bool check = false;
+    double sum = 0;
+    double def = deficit();
+    double high_def = def/1.0 + (def * .1);
+    double low_def = def/1.0 - (def * .1);
+    
+    int sz = find_num_containers().size();
+    vector<int> contain = find_num_containers();
+    for(int i = 0; i < sz-1; i++){
+        sum = sum + contain.at(i);
+    }
+
+    if(sum >= low_def && sum <= high_def){
+        check = false;
+    }
+    else{
+        check = true;
+    }
+
+    return check;
 }
