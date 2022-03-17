@@ -230,7 +230,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
 
 }
 
-Ship* searchAlgorithm(queue<Ship*> &q){
+Ship* balanceAlgorithm(queue<Ship*> &q){
   Ship* parent = q.front();
   q.pop();
 
