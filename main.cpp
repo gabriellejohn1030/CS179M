@@ -15,7 +15,7 @@ using namespace std;
 
 bool isGoalState(Ship*);
 void outputGoalSteps(Ship*);
-Ship* loadManifest();
+Ship* loadManifest(string);
 void emptyQueue(queue<Ship*> &);
 queue<Ship*> sortQueue(queue<Ship*>);
 Ship* balanceAlgorithm(queue<Ship*> &);
@@ -51,7 +51,14 @@ int main(){
     qSize = q.size();
 
 
-    SIFT(problem);
+    // SIFT(problem);
+
+    // vector<pair<int,int>> unload = {make_pair(7,4), make_pair(7,3)};
+    // vector<Container*> load = {new Container(5432, "Bat"), new Container(54, "Rat")};
+
+    // Ship* goal = unloadAndLoadAlgorithm(unload, problem, load);
+
+    // outputGoalSteps(goal);
 
       //the row 
 
@@ -284,7 +291,7 @@ bool isGoalState(Ship* goal){
 void outputGoalSteps(Ship *goal){
     vector<Ship*> steps;
     Ship* tmp = goal;
-    cout << "Fn: " << goal->getCost() << endl;
+    
     while(tmp != NULL){
         steps.push_back(tmp);
         tmp = tmp->getParent();
@@ -323,10 +330,10 @@ void outputGoalSteps(Ship *goal){
 // }
 
 
-Ship* loadManifest(){
+Ship* loadManifest(string fileName){
     fstream file;
 
-    file.open("manifests/ShipCase5.txt");
+    file.open(fileName);
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;
@@ -348,7 +355,6 @@ Ship* loadManifest(){
     reverse(grid.begin(), grid.end());
     Ship* tmp = new Ship(grid);
 
-    tmp->print();
     return tmp;
 }
 
