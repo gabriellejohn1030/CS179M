@@ -1,8 +1,6 @@
 #include "ship.h"
 using namespace std;
 
-Ship* move_right(Ship*, pair<int, int> &);
-Ship* move_left(Ship*, pair<int, int> &);
 
 
 Ship::Ship(){
@@ -32,7 +30,7 @@ Ship::Ship(vector<vector<Container*>> p){
 
 Ship::Ship(Ship* p){
     grid = p->grid;
-    parent = NULL;
+    parent = p;
     gN = p->gN + 1;
     calculate_hn();
     setUniqueKey();
@@ -54,7 +52,6 @@ void Ship::print(){
         cout << endl;
     }
     cout << endl;
-
 }
 
 double Ship::find_mass_left(){
@@ -108,14 +105,12 @@ void Ship::setUniqueKey(){
         vector<Container*> row = grid.at(i);
         for(int j = 0; j < row.size(); ++j){
             if(row.at(j)->weight > 0){
-                key += abs(sqrt(row.at(j)->weight) * lock);
-                lock *= sqrt(key/2.0);
+                key += sqrt(abs(row.at(j)->weight * lock));
+                lock *= (lock < 500) ? key*3 : key/2.0;
             }
         }
     }
     uniqueKey = key;
-    // cout << "This is the value of uk: " << key << endl;
-    // this->print();
 }
 
 
@@ -175,7 +170,69 @@ vector<Ship*> Ship::dropDown(pair<int, int> idx){
     return children;
 }
 
-Ship* move_right(Ship *p, pair<int, int> &idx){
+vector<pair<Ship*,Container*>> Ship::unloadContainer(vector<pair<int, int>> allCont, int index){
+    vector<pair<Ship*,Container*>> children;
+    pair<int,int> idx = allCont[index];
+    Ship *move = new Ship(grid);
+    int above = containersAbove(this, idx);
+    bool isAboveContainerToUnload = true;
+    Container* nullCont = NULL;
+    Ship* nullShip = NULL;
+
+    while(above > 0){
+        pair<int, int> idxOfTopContainer = make_pair(idx.first-above,idx.second);
+        Container* cont = move->grid[idxOfTopContainer.first][idxOfTopContainer.second];
+        
+        // cout << "idxoftop: " << idxOfTopContainer.first << idxOfTopContainer.second << endl;
+        move = move_left(move, idxOfTopContainer);
+        isAboveContainerToUnload = true;
+        
+        if(move == NULL){
+            children.push_back(make_pair(nullShip, new Container(cont->weight, cont->contents)));
+            above--;
+            continue;
+        }
+        while(isAboveContainerToUnload){
+            isAboveContainerToUnload = false;
+            for(int i = 0; i < allCont.size(); ++i){
+                if(allCont[i].second == idxOfTopContainer.second){
+                    isAboveContainerToUnload = true;
+                    break;
+                }
+            }
+            if(isAboveContainerToUnload){
+                cont = move->grid[idxOfTopContainer.first][idxOfTopContainer.second];
+                move = move_left(move, idxOfTopContainer);
+                if(move == NULL){
+                    children.push_back(make_pair(nullShip, new Container(cont->weight, cont->contents)));
+                    break;
+                }
+            }
+        }
+        children.push_back(make_pair(new Ship(move, 0), nullCont));        
+        above--;
+    }
+    children.push_back(make_pair(nullShip, nullCont));
+    for(int i = 0; i < children.size(); ++i){
+        if(children.at(i).first != NULL){
+            children.at(i).first->parent = this;
+            children.at(i).first->setUniqueKey();
+        }
+    }
+    return children;
+}
+
+int Ship::containersAbove(Ship* p, pair<int, int> idx){
+    int cnt = 0;
+    for(int i = 0; i < idx.first; ++i){
+        if(p->grid[i][idx.second]->weight != -1){
+            ++cnt;
+        }
+    }
+    return cnt;
+}
+
+Ship* Ship::move_right(Ship *p, pair<int, int> &idx){
     if(idx.second + 1 >= 12){
         return NULL;
     }
@@ -224,7 +281,7 @@ Ship* move_right(Ship *p, pair<int, int> &idx){
     return p;
 }
 
-Ship* move_left(Ship *p, pair<int, int> &idx){ 
+Ship* Ship::move_left(Ship *p, pair<int, int> &idx){ 
     if(idx.second - 1 < 0){
         return NULL;
     }
@@ -285,7 +342,6 @@ string Ship::ret_larger_side(){
     else{
         tmp = "right";
     }
-
     return tmp;
 }
 
@@ -315,9 +371,7 @@ vector<int> Ship::sort_larger_mass(){
     }
 
     sort(vec1.begin(), vec1.end());
-
     reverse(vec1.begin(), vec1.end());
-
 
     return vec1;
 }
@@ -368,10 +422,8 @@ vector<int> Ship::find_num_containers(){
         i++;
     }
 
-
     values.push_back(values.size());
     return values;
-    
 }
 
 vector<pair<int,int>> Ship::find_container_location(){
@@ -434,10 +486,7 @@ vector<pair<int,int>> Ship::find_container_location(){
         }
         i++;
     }
-
-   // values.push_back(values.size());
     return values;
-    
 }
 
 int Ship::find_nearest_col(){
@@ -491,8 +540,6 @@ void Ship::calculate_hn(){
     
     int sum = 0;
 
-    
-
     for(int i = 0; i < values.size(); i++){
         for(int j = 0; j < loc.size(); j++){
             if(values.at(i) == grid.at(loc.at(j).first).at(loc.at(j).second)->weight){
@@ -503,8 +550,73 @@ void Ship::calculate_hn(){
 
     hN = sum;
     fN = hN + gN;
+}
 
-    // cout << "HN is:  " << hN  << " for this uniqueKey: " << uniqueKey << endl;
+void Ship::trickleDown(){
+    bool leave = false;
+    pair<int,int> swapIdx;
+    for(int i = 0; i < 12; ++i){
+        for(int j = 7; j > -1; --j){
+            if(grid[j][i]->weight > -1 && j != 7){
+                int k = j + 1;
+                int row = j, column = i;
+                if(grid[k][column]->weight > -1){continue;}
+                while(k < 8){
+                    if(grid[k][column]->weight > -1 || grid[k][column]->weight == -2){break;}
+                    swap(grid[row][column], grid[k][column]);
+                    row = k;
+                    k++;
+                }
+            }
+        } 
+    }
+}
+
+void Ship::removeContainer(Container* c){
+    for(int i = 0; i < 8; ++i){
+        for(int j = 0; j < 12; ++j){
+            if(grid[i][j]->weight == c->weight && grid[i][j]->contents == c->contents){
+                grid[i][j] = new Container(0, "UNUSED");
+                setUniqueKey();
+                return;
+            }
+        }
+    }
+}
+
+void Ship::addContainer(Container* c, int column){
+    if(column < 0){    
+        for(int i = 0; i < 8; ++i){
+            for(int j = 0; j < 12; ++j){
+                if(grid[i][j]->weight == -1){
+                    grid[i][j] = new Container(c->weight, c->contents);
+                    setUniqueKey();
+                    return;
+                }
+            }
+        }
+    }
+    else{
+        for(int i = 0; i < 8; ++i){
+            if(grid[i][column]->weight == -1){
+                grid[i][column] = new Container(c->weight, c->contents);
+                setUniqueKey();
+                return;
+            }
+        }
+    }
+}
+
+vector<vector<Container*>> Ship::getGrid(){
+    return this->grid;
+}
+
+void Ship::setGrid(vector<vector<Container*>> g){
+    this->grid = g;
+}
+
+double Ship::getUniqueKey(){
+    return this->uniqueKey;
 }
 
 

@@ -18,17 +18,26 @@ void outputGoalSteps(Ship*);
 Ship* loadManifest();
 void emptyQueue(queue<Ship*> &);
 queue<Ship*> sortQueue(queue<Ship*>);
-Ship* searchAlgorithm(queue<Ship*> &);
+Ship* balanceAlgorithm(queue<Ship*> &);
+Ship* unloadAndLoadAlgorithm(vector<pair<int,int>>, Ship*, vector<Container*> c);
 vector<vector<Container*>> initializeVec();
 vector<vector<Container*>> intializeBuf();
-
+void moveToBuffer(vector<vector<Container*>>&, Container*);
+void outputBuffer(vector<vector<Container*>>);
+pair<int,int> bufferEmpty(vector<vector<Container*>>);
+void removeFromBuffer(vector<vector<Container*>>&, pair<int,int> idx);
+int availableColumn(vector<pair<int,int>>);
+bool compare(Ship* a, Ship* b);
 void buf_print(vector<vector<Container*>>);
 pair<int, int> first_buffer_loc(vector<vector<Container*>>);
 vector<Container*> sort_buf(vector<Container*>);
+vector<string> SIFT(Ship *);
+
 
 
 map<double, vector<vector<Container*>>> duplicate;
-
+map<double, vector<vector<Container*>>>::iterator it;
+        
 int qSize = 0; // size of queue
 
 int main(){
@@ -40,6 +49,10 @@ int main(){
     q.push(problem);
       
     qSize = q.size();
+
+
+    SIFT(problem);
+
       //the row 
 
       /*
@@ -49,130 +62,131 @@ int main(){
             30,31,32,33,34,35,36,37,38,39,310,311,312,313,314,315,316,317,318,319,320,321,322,323
       */
 
-    if(problem->check_SIFT()){
-      //do sift operation instead of other operation
-      cout << "DOING SIFT OPERATION" << endl;
-      vector<string> move_output;
-      // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
-      vector<vector<Container*>> buf =  intializeBuf(); 
-      buf_print(buf);
-      vector<Container*> buf_sorted;
-      int first = 0;
-      int second = 0;
-      int third = 0;
-      int fourth = 0;
+    // if(problem->check_SIFT()){
+    //   //do sift operation instead of other operation
+    //   cout << "DOING SIFT OPERATION" << endl;
+    //   vector<string> move_output;
+    //   // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
+    //   vector<vector<Container*>> buf =  intializeBuf(); 
+    //   buf_print(buf);
+    //   vector<Container*> buf_sorted;
+    //   int first = 0;
+    //   int second = 0;
+    //   int third = 0;
+    //   int fourth = 0;
      
-      Ship *move = new Ship(problem->grid);
-       
-      for(int i = 0; i < move->grid.size();i++){        
-        for(int j = 0; j < move->grid.at(0).size(); ++j){            
-            if(move->grid.at(i).at(j)->weight != -1 && move->grid.at(i).at(j)->weight != -2){
-              // need helper to find first avalible in bottom row of buf
-              first = i+1;
-              second = j+1;
-              pair<int, int> location = first_buffer_loc(buf);    
-              third = location.first + 1;
-              fourth = location.second + 1;
-              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";    
-              move_output.push_back(directions);     
-              buf.at(location.first).at(location.second)->weight = move->grid.at(i).at(j)->weight;              
-              Container* element = new Container;              
-              element->weight = move->grid.at(i).at(j)->weight;              
-              element->contents = move->grid.at(i).at(j)->contents;              
-              buf_sorted.push_back(element);
-              move->grid.at(i).at(j)->weight = -1;
-              move->print();
-              buf_print(buf);
+    //   Ship *move = new Ship(problem->getGrid());
+    //   vector<vector<Container*>> g = move->getGrid();
+    //   for(int i = 0; i < move->grid.size();i++){        
+    //     for(int j = 0; j < move->grid.at(0).size(); ++j){            
+    //         if(move->grid.at(i).at(j)->weight != -1 && move->grid.at(i).at(j)->weight != -2){
+    //           // need helper to find first avalible in bottom row of buf
+    //           first = i+1;
+    //           second = j+1;
+    //           pair<int, int> location = first_buffer_loc(buf);    
+    //           third = location.first + 1;
+    //           fourth = location.second + 1;
+    //           string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";    
+    //           move_output.push_back(directions);     
+    //           buf.at(location.first).at(location.second)->weight = move->grid.at(i).at(j)->weight;              
+    //           Container* element = new Container;              
+    //           element->weight = move->grid.at(i).at(j)->weight;              
+    //           element->contents = move->grid.at(i).at(j)->contents;              
+    //           buf_sorted.push_back(element);
+    //           move->grid.at(i).at(j)->weight = -1;
+    //           move->print();
+    //           buf_print(buf);
 
-            }
-        }
-      } 
+    //         }
+    //     }
+    //   }
+    //   move->setGrid(g); 
 
       
-      // buf_print(buf);    
-      sort_buf(buf_sorted);
-      for(int i = 0; i < buf_sorted.size(); i++){
-        cout << "this is the output for sorted: " << buf_sorted.at(i)->weight << endl;
-      }
+    //   // buf_print(buf);    
+    //   sort_buf(buf_sorted);
+    //   for(int i = 0; i < buf_sorted.size(); i++){
+    //     cout << "this is the output for sorted: " << buf_sorted.at(i)->weight << endl;
+    //   }
 
-      int buf_population = buf_sorted.size();
+    //   int buf_population = buf_sorted.size();
 
-      int z = 0;
-      int buf_mod = 0;
-      second = 26;
-      for(int i = move->grid.size()-1; i > 0;i--){
-        for(int j = ((move->grid.at(0).size()/2) - 1); j > 0; j--){
-            buf_mod = z % 2;
-            if(move->grid.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 0  && move->grid.at(i).at(j)->weight != -2){
-              move->grid.at(i).at(j)->weight = buf_sorted.at(z)->weight;
-              move->grid.at(i).at(j)->contents = buf_sorted.at(z)->contents;
-              first = 4;
-              second = second - 2;
-              third = i + 1;
-              fourth = j + 1;
-              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
-              move_output.push_back(directions); 
-              z = z + 2;
-              move->print();
-            }
-        }
-      } 
+    //   int z = 0;
+    //   int buf_mod = 0;
+    //   second = 26;
+    //   for(int i = move->grid.size()-1; i > 0;i--){
+    //     for(int j = ((move->grid.at(0).size()/2) - 1); j > 0; j--){
+    //         buf_mod = z % 2;
+    //         if(move->grid.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 0  && move->grid.at(i).at(j)->weight != -2){
+    //           move->grid.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+    //           move->grid.at(i).at(j)->contents = buf_sorted.at(z)->contents;
+    //           first = 4;
+    //           second = second - 2;
+    //           third = i + 1;
+    //           fourth = j + 1;
+    //           string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
+    //           move_output.push_back(directions); 
+    //           z = z + 2;
+    //           move->print();
+    //         }
+    //     }
+    //   } 
       
-      move->print();
+    //   move->print();
 
-      z = 1;
-      buf_mod = 0;
-      second = 25;
-      for(int i = move->grid.size()-1; i > 0;i--){
-        for(int j = ((move->grid.at(0).size()/2)); j < move->grid.at(0).size(); j++){
-            buf_mod = z % 2;
-            if(move->grid.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && move->grid.at(i).at(j)->weight != -2 ){
-              move->grid.at(i).at(j)->weight = buf_sorted.at(z)->weight;
-              first = 4;
-              second = second - 2;
-              third = i + 1;
-              fourth = j + 1;
-              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
-              move_output.push_back(directions); 
-              z = z + 2;
-              move->print();
-            }
-        }
-      } 
+    //   z = 1;
+    //   buf_mod = 0;
+    //   second = 25;
+    //   for(int i = move->grid.size()-1; i > 0;i--){
+    //     for(int j = ((move->grid.at(0).size()/2)); j < move->grid.at(0).size(); j++){
+    //         buf_mod = z % 2;
+    //         if(move->grid.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && move->grid.at(i).at(j)->weight != -2 ){
+    //           move->grid.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+    //           first = 4;
+    //           second = second - 2;
+    //           third = i + 1;
+    //           fourth = j + 1;
+    //           string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
+    //           move_output.push_back(directions); 
+    //           z = z + 2;
+    //           move->print();
+    //         }
+    //     }
+    //   } 
 
-      for(int i = 0; i < move_output.size(); i++){
-        cout << move_output.at(i) << endl;
-      }
-
-
-      return 0;
-    }
+    //   for(int i = 0; i < move_output.size(); i++){
+    //     cout << move_output.at(i) << endl;
+    //   }
 
 
-    while(1){
-     // cout << q.size() << endl;
-      if(q.empty()){break;}
-      if(qSize < q.size()){qSize = q.size();}
+    //   return 0;
+    // }
+
+
+    // while(1){
+    //  // cout << q.size() << endl;
+    //   if(q.empty()){break;}
+    //   if(qSize < q.size()){qSize = q.size();}
      
-      Ship* node = q.front();
+    // //   Ship* node = q.front();
 
-      duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
+    // //   duplicate.insert(pair<double, vector<vector<Container*>>>(node->uniqueKey, node->grid)); //inserts node into the map
 
-      if(isGoalState(node)){
-      //  cout <<  "This is the fN value for the goal state" <<node->fN << endl;
-        outputGoalSteps(node);
-        break;
-      }
+    //   if(isGoalState(node)){
+    //   //  cout <<  "This is the fN value for the goal state" <<node->fN << endl;
+    //     outputGoalSteps(node);
+    //     break;
+    //   }
       
-      Ship *goal = searchAlgorithm(q);
+    //   Ship *goal = searchAlgorithm(q);
 
-      if(goal != NULL){
-          cout << "GOAL STATE FOUND" << endl;
-          outputGoalSteps(goal);
-          break;
-      }
+    // //   if(goal != NULL){
+    // //       cout << "GOAL STATE FOUND" << endl;
+    // //       outputGoalSteps(goal);
+    // //       break;
+    // //   }
 
-    }
+    // // }
 
     return 0;
 }
@@ -196,7 +210,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
   while(!q.empty()){
     temp = q.front();
     tempQ.push_back(temp);
-    allFn.push_back(temp->fN);
+    allFn.push_back(temp->getCost());
     q.pop();
   }
   for(int i = 0; i < allFn.size(); ++i){
@@ -230,8 +244,7 @@ Ship* searchAlgorithm(queue<Ship*> &q){
   }
 
   for(int i = 0; i < children.size(); i++){
-    if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
-    //   cout << "called erase: " << children.size() << endl;
+    if(duplicate.find(children.at(i)->getUniqueKey()) != duplicate.end()){ //checks if child has already been explored
       children.erase(children.begin() + i);
       --i;
       continue;
@@ -271,10 +284,10 @@ bool isGoalState(Ship* goal){
 void outputGoalSteps(Ship *goal){
     vector<Ship*> steps;
     Ship* tmp = goal;
-    cout << "Fn: " << goal->fN << endl;
+    cout << "Fn: " << goal->getCost() << endl;
     while(tmp != NULL){
         steps.push_back(tmp);
-        tmp = tmp->parent;
+        tmp = tmp->getParent();
     }
     reverse(steps.begin(), steps.end());
     for(int i = 0; i < steps.size(); ++i){
@@ -354,7 +367,6 @@ vector<vector<Container*>> initializeVec(){
     return tmp;
 }
 
-
 vector<vector<Container*>> intializeBuf(){
     vector<vector<Container*>> buf = {                                   // ij (row, column)
         {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},      
@@ -406,3 +418,236 @@ vector<Container*> sort_buf(vector<Container*> buf){
     return buf;
 }
 
+Ship* unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<Container*> c){
+    vector<vector<Container*>> buffer = intializeBuf();
+    Ship *temp = p;
+    vector<Ship*> steps;
+    temp->trickleDown();
+    steps.push_back(new Ship(temp));
+    for(int i = 0; i < idxs.size(); ++i){
+        vector<pair<Ship*, Container*>> tmp = temp->unloadContainer(idxs, i);
+        for(int j = 0; j < tmp.size(); ++j){
+            if(tmp.at(j).first == NULL && tmp.at(j).second == NULL){continue;}
+            else if(tmp.at(j).first == NULL && tmp.at(j).second != NULL){continue;}
+            else{
+                temp = new Ship(tmp.at(j).first);
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
+            }
+        }
+        
+        for(int k = 0; k < tmp.size(); ++k){
+            if(tmp.at(k).first == NULL && tmp.at(k).second == NULL && k == tmp.size()-1){ //container to load
+                vector<vector<Container*>> g = temp->getGrid(); 
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
+                temp->removeContainer(g[idxs[i].first][idxs[i].second]);
+                steps.push_back(new Ship(temp));
+            }
+            else if(tmp.at(k).first == NULL && tmp.at(k).second != NULL){ //container to buffer
+                moveToBuffer(buffer, tmp.at(k).second);
+                temp->trickleDown();
+                temp->removeContainer(tmp.at(k).second);
+            }
+        }
+        idxs.erase(idxs.begin()+i);
+        --i;
+    }
+    pair<int, int> emptyBuffer = bufferEmpty(buffer);
+    while(emptyBuffer.first != -1){
+        temp->addContainer(buffer[emptyBuffer.first][emptyBuffer.second], -1);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+        removeFromBuffer(buffer, emptyBuffer);
+        emptyBuffer = bufferEmpty(buffer);
+    }
+    for(int i = 0; i < steps.size()-1; ++i){
+        if(compare(steps.at(i),steps.at(i+1))){
+            steps.erase(steps.begin()+i);
+            --i;
+        }
+    }
+
+    for(int i = 0; i < c.size(); ++i){
+        Container *loadingContainer = new Container(c.at(i)->weight, c.at(i)->contents);
+        int n = availableColumn(idxs);
+        temp->addContainer(loadingContainer, n);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+    }
+
+    for(int i = steps.size()-1; i > 0; --i){
+        steps[i]->setParent(steps[i-1]);
+    }
+    steps.at(0)->setParent(NULL);
+    return steps.at(steps.size()-1);
+}
+
+void moveToBuffer(vector<vector<Container*>> &buf, Container *c){
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight == -1){
+                buf[j][i] = c;
+                return;
+            }
+        }
+    }
+}
+
+void outputBuffer(vector<vector<Container*>> b){
+    for(int i = 0; i < b.size(); ++i ){
+        for(int j = 0; j < b.at(0).size(); j++){
+            cout << b.at(i).at(j)->weight << '\t';
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+pair<int,int> bufferEmpty(vector<vector<Container*>> buf){
+    pair<int, int> idx = make_pair(-1,-1);
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight != -1){
+                idx.first = j;
+                idx.second = i;
+                return idx;
+            }
+        }
+    }
+    return idx;
+}
+
+void removeFromBuffer(vector<vector<Container*>> &buf, pair<int,int> idx){
+    buf[idx.first][idx.second] = new Container(0, "UNUSED");
+}
+
+int availableColumn(vector<pair<int,int>> idxs){
+    int n = -1;
+    bool exists = false;
+    for(int i = 0; i < 12; ++i){
+        exists = false;
+        for(int j = 0; j < idxs.size(); ++j){
+            if(idxs.at(j).second == i){
+                exists = true;
+            }
+        }
+        if(!exists){
+            return i;
+        }
+    }
+    return n;
+}
+
+bool compare(Ship* a, Ship* b){
+    vector<vector<Container*>> gridA = a->getGrid();
+    vector<vector<Container*>> gridB = b->getGrid();
+
+    for(int i = 0; i < gridA.size(); ++i){
+        for(int j = 0; j < gridA[0].size(); ++j){
+            if(gridA[i][j]->weight != gridB[i][j]->weight){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+
+
+vector<string> SIFT(Ship* problem){
+  
+    if(problem->check_SIFT()){
+      //do sift operation instead of other operation
+      
+      vector<string> move_output;
+      // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
+      vector<vector<Container*>> buf =  intializeBuf(); 
+      
+      vector<Container*> buf_sorted;
+      int first = 0;
+      int second = 0;
+      int third = 0;
+      int fourth = 0;
+     
+      Ship *move = new Ship(problem->getGrid());
+      vector<vector<Container*>> g = move->getGrid();
+      for(int i = 0; i < g.size();i++){        
+        for(int j = 0; j < g.at(0).size(); ++j){            
+            if(g.at(i).at(j)->weight != -1 && g.at(i).at(j)->weight != -2){
+              // need helper to find first avalible in bottom row of buf
+              first = i+1;
+              second = j+1;
+              pair<int, int> location = first_buffer_loc(buf);    
+              third = location.first + 1;
+              fourth = location.second + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";    
+              move_output.push_back(directions);     
+              buf.at(location.first).at(location.second)->weight = g.at(i).at(j)->weight;              
+              Container* element = new Container;              
+              element->weight = g.at(i).at(j)->weight;              
+              element->contents = g.at(i).at(j)->contents;              
+              buf_sorted.push_back(element);
+              g.at(i).at(j)->weight = -1;
+
+            }
+        }
+      }
+       
+
+      
+      // buf_print(buf);    
+      sort_buf(buf_sorted);
+
+      int buf_population = buf_sorted.size();
+
+      int z = 0;
+      int buf_mod = 0;
+      second = 26;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2) - 1); j > 0; j--){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 0  && g.at(i).at(j)->weight != -2){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              g.at(i).at(j)->contents = buf_sorted.at(z)->contents;
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
+              move_output.push_back(directions); 
+              z = z + 2;
+            }
+        }
+      } 
+      
+
+      z = 1;
+      buf_mod = 0;
+      second = 25;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2)); j < g.at(0).size(); j++){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && g.at(i).at(j)->weight != -2 ){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);    
+              move_output.push_back(directions); 
+              z = z + 2;
+            }
+        }
+      } 
+      move->setGrid(g);
+
+      // for(int i = 0; i < move_output.size(); i++){
+      //   cout << move_output.at(i) << endl;
+      // }
+
+
+      return move_output;
+    }
+}
