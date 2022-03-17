@@ -44,7 +44,7 @@ int main(){
     Ship *problem;
     queue<Ship*> q;
     
-    problem = loadManifest();
+    // problem = loadManifest("manifests");
       
     q.push(problem);
       
