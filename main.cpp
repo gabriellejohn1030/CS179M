@@ -20,11 +20,21 @@ void updateManifest(Ship*);
 void emptyQueue(queue<Ship*> &);
 queue<Ship*> sortQueue(queue<Ship*>);
 Ship* balanceAlgorithm(queue<Ship*> &);
-Ship* unloadAlgorithm(vector<pair<int,int>> &, Ship*);
+Ship* unloadAndLoadAlgorithm(vector<pair<int,int>>, Ship*, vector<Container*> c);
 vector<vector<Container*>> initializeVec();
+vector<vector<Container*>> intializeBuf();
+void moveToBuffer(vector<vector<Container*>>&, Container*);
+void outputBuffer(vector<vector<Container*>>);
+pair<int,int> bufferEmpty(vector<vector<Container*>>);
+void removeFromBuffer(vector<vector<Container*>>&, pair<int,int> idx);
+int availableColumn(vector<pair<int,int>>);
+bool compare(Ship* a, Ship* b);
+
+
 
 map<double, vector<vector<Container*>>> duplicate;
-
+map<double, vector<vector<Container*>>>::iterator it;
+        
 int qSize = 0; // size of queue
 
 int main(){
@@ -37,15 +47,17 @@ int main(){
       
     qSize = q.size();
 
-    vector<pair<int,int>> unload = {make_pair(6,0), make_pair(6,1)};
+    vector<pair<int,int>> unload = {make_pair(7,4), make_pair(7,3)};
+    vector<Container*> load = {new Container(153, "Nat"), new Container(2321, "Rat")};
     // vector<pair<int,int>> tmp = problem->pickUp();
 
     // for(int i = 0; i < tmp.size(); ++i){
     //     cout << tmp[i].first << ' ' << tmp[i].second << endl;
     // }
     // problem->print();
-    unloadAlgorithm(unload, problem);
+    Ship* test = unloadAndLoadAlgorithm(unload, problem, load);
 
+    outputGoalSteps(test);
     // while(1){
     //   if(q.empty()){break;}
     //   if(qSize < q.size()){qSize = q.size();}
@@ -92,7 +104,7 @@ queue<Ship*> sortQueue(queue<Ship*> q){
   while(!q.empty()){
     temp = q.front();
     tempQ.push_back(temp);
-    allFn.push_back(temp->fN);
+    allFn.push_back(temp->getCost());
     q.pop();
   }
   for(int i = 0; i < allFn.size(); ++i){
@@ -126,8 +138,7 @@ Ship* balanceAlgorithm(queue<Ship*> &q){
   }
 
   for(int i = 0; i < children.size(); i++){
-    if(duplicate.find(children.at(i)->uniqueKey) != duplicate.end()){ //checks if child has already been explored
-    //   cout << "called erase: " << children.size() << endl;
+    if(duplicate.find(children.at(i)->getUniqueKey()) != duplicate.end()){ //checks if child has already been explored
       children.erase(children.begin() + i);
       --i;
       continue;
@@ -165,7 +176,7 @@ void outputGoalSteps(Ship *goal){
     
     while(tmp != NULL){
         steps.push_back(tmp);
-        tmp = tmp->parent;
+        tmp = tmp->getParent();
     }
     reverse(steps.begin(), steps.end());
     for(int i = 0; i < steps.size(); ++i){
@@ -177,7 +188,7 @@ void outputGoalSteps(Ship *goal){
 Ship* loadManifest(){
     fstream file;
 
-    file.open("manifests/ShipCase3.txt");
+    file.open("manifests/ShipCase10.txt");
     if(!file.is_open()){
         cout << "FAILED LOADING MANIFEST" << endl;
         return NULL;
@@ -203,10 +214,6 @@ Ship* loadManifest(){
     return tmp;
 }
 
-void updateManifest(Ship *p){
-
-}
-
 vector<vector<Container*>> initializeVec(){
     vector<vector<Container*>> tmp;
     tmp = {                                   // ij (row, column)
@@ -222,21 +229,147 @@ vector<vector<Container*>> initializeVec(){
     return tmp;
 }
 
-Ship* unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p){
-    p->print();
+vector<vector<Container*>> intializeBuf(){
+    vector<vector<Container*>> buf = {                                   // ij (row, column)
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},      
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},      
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")} 
+    };
+    return buf; 
+}
+
+Ship* unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<Container*> c){
+    vector<vector<Container*>> buffer = intializeBuf();
+    Ship *temp = p;
+    vector<Ship*> steps;
+    temp->trickleDown();
+    steps.push_back(new Ship(temp));
     for(int i = 0; i < idxs.size(); ++i){
-        vector<Ship*> tmp = p->unloadContainer(idxs, i);
-        idxs.erase(idxs.begin()+i);
-        --i;
+        vector<pair<Ship*, Container*>> tmp = temp->unloadContainer(idxs, i);
         for(int j = 0; j < tmp.size(); ++j){
-            if(tmp.at(j) == NULL && j == tmp.size()-1){
-                cout << "TRUCK" << endl;
-            } else if(tmp.at(j) == NULL){
-                cout << "BUFFER" << endl;
-            } else{
-                tmp.at(j)->print();
+            if(tmp.at(j).first == NULL && tmp.at(j).second == NULL){continue;}
+            else if(tmp.at(j).first == NULL && tmp.at(j).second != NULL){continue;}
+            else{
+                temp = new Ship(tmp.at(j).first);
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
             }
         }
-        cout << "END OF THIS MOVE" << endl << endl << endl;
+        
+        for(int k = 0; k < tmp.size(); ++k){
+            if(tmp.at(k).first == NULL && tmp.at(k).second == NULL && k == tmp.size()-1){ //container to load
+                vector<vector<Container*>> g = temp->getGrid(); 
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
+                temp->removeContainer(g[idxs[i].first][idxs[i].second]);
+                steps.push_back(new Ship(temp));
+            }
+            else if(tmp.at(k).first == NULL && tmp.at(k).second != NULL){ //container to buffer
+                moveToBuffer(buffer, tmp.at(k).second);
+                temp->trickleDown();
+                temp->removeContainer(tmp.at(k).second);
+            }
+        }
+        idxs.erase(idxs.begin()+i);
+        --i;
     }
+    pair<int, int> emptyBuffer = bufferEmpty(buffer);
+    while(emptyBuffer.first != -1){
+        temp->addContainer(buffer[emptyBuffer.first][emptyBuffer.second], -1);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+        removeFromBuffer(buffer, emptyBuffer);
+        emptyBuffer = bufferEmpty(buffer);
+    }
+    for(int i = 0; i < steps.size()-1; ++i){
+        if(compare(steps.at(i),steps.at(i+1))){
+            steps.erase(steps.begin()+i);
+            --i;
+        }
+    }
+
+    for(int i = 0; i < c.size(); ++i){
+        Container *loadingContainer = new Container(c.at(i)->weight, c.at(i)->contents);
+        int n = availableColumn(idxs);
+        temp->addContainer(loadingContainer, n);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+    }
+
+    for(int i = steps.size()-1; i > 0; --i){
+        steps[i]->setParent(steps[i-1]);
+    }
+    steps.at(0)->setParent(NULL);
+    return steps.at(steps.size()-1);
+}
+
+void moveToBuffer(vector<vector<Container*>> &buf, Container *c){
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight == -1){
+                buf[j][i] = c;
+                return;
+            }
+        }
+    }
+}
+
+void outputBuffer(vector<vector<Container*>> b){
+    for(int i = 0; i < b.size(); ++i ){
+        for(int j = 0; j < b.at(0).size(); j++){
+            cout << b.at(i).at(j)->weight << '\t';
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+pair<int,int> bufferEmpty(vector<vector<Container*>> buf){
+    pair<int, int> idx = make_pair(-1,-1);
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight != -1){
+                idx.first = j;
+                idx.second = i;
+                return idx;
+            }
+        }
+    }
+    return idx;
+}
+
+void removeFromBuffer(vector<vector<Container*>> &buf, pair<int,int> idx){
+    buf[idx.first][idx.second] = new Container(0, "UNUSED");
+}
+
+int availableColumn(vector<pair<int,int>> idxs){
+    int n = -1;
+    bool exists = false;
+    for(int i = 0; i < 12; ++i){
+        exists = false;
+        for(int j = 0; j < idxs.size(); ++j){
+            if(idxs.at(j).second == i){
+                exists = true;
+            }
+        }
+        if(!exists){
+            return i;
+        }
+    }
+    return n;
+}
+
+bool compare(Ship* a, Ship* b){
+    vector<vector<Container*>> gridA = a->getGrid();
+    vector<vector<Container*>> gridB = b->getGrid();
+
+    for(int i = 0; i < gridA.size(); ++i){
+        for(int j = 0; j < gridA[0].size(); ++j){
+            if(gridA[i][j]->weight != gridB[i][j]->weight){
+                return false;
+            }
+        }
+    }
+    return true;
 }
