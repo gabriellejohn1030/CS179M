@@ -38,6 +38,8 @@ class Dialog : public QDialog
 
 public:
     Dialog(QWidget *parent = nullptr);
+    void initializeUnloadCheckboxes();
+    vector<vector<Container*>> Transpose(const vector<vector<Container*>> &);
     ~Dialog();
 
 private slots:
@@ -64,22 +66,26 @@ private slots:
     void on_unloadButton_clicked();
 
     void onBalanceFinished(bool success);
+    void onContainersFound(int c);
+
+    void on_doneLoadingButton_clicked();
 
 private:
     Ui::Dialog *ui;
     QVector<QCheckBox*> checkBoxVector;
+    QVector<QLabel*> labelChkVector;
     logger log;
     helper h;
     Ship* problem;
+    QVector<Container*> loadOnContainers;
 
     bool debugMode;
     bool loggedIn;
     bool isFinished;
-
     int currStep;
     int totalSteps;
 
     QString currUser;
-    QString currManifest;
+    QString manifestFileName;
 };
 #endif // DIALOG_H

@@ -38,42 +38,6 @@ queue<Ship*> helper::sortQueue(queue<Ship*> q){
   return q;
 }
 
-Ship* helper::searchAlgorithm(queue<Ship*> &q){
-  Ship* parent = q.front();
-  q.pop();
-
-  vector<pair<int,int>> pick_up_indexes = parent->pickUp();
-  vector<Ship*> children;
-  for(int i = 0; i < pick_up_indexes.size(); ++i){
-    vector<Ship*> drop_tmp = parent->dropDown(pick_up_indexes.at(i));
-    for(int j = 0; j < drop_tmp.size(); ++j){
-      children.push_back(drop_tmp.at(j));
-    }
-  }
-  for(int i = 0; i < children.size(); i++){
-    if(duplicate.find(children.at(i)->getUniqueKey()) != duplicate.end()){ //checks if child has already been explored
-    //   cout << "called erase: " << children.size() << endl;
-      children.erase(children.begin() + i);
-      --i;
-      continue;
-    }
-
-    if(isGoalState(children.at(i))){
-      emptyQueue(q);
-      return children.at(i);
-    }
-
-    if(qSize < q.size()){qSize = q.size();}
-
-  }
-  for(int i = 0; i < children.size(); i++){
-    q.push(children.at(i));
-  }
-  q = sortQueue(q);
-
-  return NULL;
-}
-
 bool helper::isGoalState(Ship* goal){
     // goal->print();
     double left = goal->find_mass_left();
@@ -87,22 +51,30 @@ bool helper::isGoalState(Ship* goal){
     return (result >= 0.9);
 }
 
-void helper::outputGoalSteps(Ship *goal){
+vector<string> helper::outputGoalSteps(Ship *goal){
     vector<Ship*> steps;
+    vector<string> moves;
     Ship* tmp = goal;
+    Ship* parent;
+    Ship* child;
 
     while(tmp != NULL){
         steps.push_back(tmp);
         tmp = tmp->getParent();
     }
     reverse(steps.begin(), steps.end());
-    for(int i = 0; i < steps.size(); ++i){
-        steps.at(i)->print();
+
+    for(int i = 0; i < steps.size() - 1; ++i){
+        parent = steps.at(i);
+        child = steps.at(i + 1);
+//        steps.at(i)->print();
+        moves.push_back(steps.at(i)->outputMoves(parent, child));
     }
-    return;
+//    steps.at(steps.size()-1)->print();
+    return moves;
 }
 
-Ship* helper::(string fileName){
+Ship* helper::loadManifest(string fileName){
     fstream file;
 
     file.open(fileName);
@@ -112,13 +84,14 @@ Ship* helper::(string fileName){
     }
     vector<vector<Container*>> grid = initializeVec();
     string idx, weight, content;
-    int w = 0, row = 0, column = 0;
+    int w = 0, row = 0, column = 0, containers = 0;
 
     while(file >> idx){
         file >> weight;
         file >> content;
 
         w = stoi(weight.substr(1, 5));
+        if (content != "UNUSED" && content != "NAN") containers++;
         row = stoi(idx.substr(1, 2)) - 1;
         column = stoi(idx.substr(4, 2)) - 1;
 
@@ -126,7 +99,9 @@ Ship* helper::(string fileName){
     }
     reverse(grid.begin(), grid.end());
     Ship* tmp = new Ship(grid);
-
+    if (containers > 0) {
+        emit containersFound(containers);
+    }
     // tmp->print();
     return tmp;
 }
@@ -159,43 +134,345 @@ void helper::balance(Ship *problem) {
 
           if (isGoalState(node)){
             qDebug() << "GOAL STATE FOUND";
-            outputGoalSteps(node);
+            moves = outputGoalSteps(node);
             emit balanceFinished(true);
             return;
           }
 
-          Ship *goal = searchAlgorithm(q);
+          Ship *goal = balanceAlgorithm(q);
 
           if(goal != NULL){
               qDebug() << "GOAL STATE FOUND";
-              outputGoalSteps(goal);
+              moves = outputGoalSteps(goal);
               emit balanceFinished(true);
               return;
           }
         }
     } else {
-        // do sift down here
+        moves = SIFT(problem);
+        emit balanceFinished(true);
+        return;
     }
     emit balanceFinished(false);
     return;
 }
 
-
-Ship* helper::unloadAlgorithm(vector<pair<int,int>> &idxs, Ship* p){
-    p->print();
+Ship* helper::unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<Container*> c){
+    vector<vector<Container*>> buffer = intializeBuf();
+    Ship *temp = p;
+    vector<Ship*> steps;
+    temp->trickleDown();
+    steps.push_back(new Ship(temp));
     for(int i = 0; i < idxs.size(); ++i){
-        vector<Ship*> tmp = p->unloadContainer(idxs, i);
-        idxs.erase(idxs.begin()+i);
-        --i;
+        vector<pair<Ship*, Container*>> tmp = temp->unloadContainer(idxs, i);
         for(int j = 0; j < tmp.size(); ++j){
-            if(tmp.at(j) == NULL && j == tmp.size()-1){
-                cout << "TRUCK" << endl;
-            } else if(tmp.at(j) == NULL){
-                cout << "BUFFER" << endl;
-            } else{
-                tmp.at(j)->print();
+            if(tmp.at(j).first == NULL && tmp.at(j).second == NULL){continue;}
+            else if(tmp.at(j).first == NULL && tmp.at(j).second != NULL){continue;}
+            else{
+                temp = new Ship(tmp.at(j).first);
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
             }
         }
-        cout << "END OF THIS MOVE" << endl << endl << endl;
+
+        for(int k = 0; k < tmp.size(); ++k){
+            if(tmp.at(k).first == NULL && tmp.at(k).second == NULL && k == tmp.size()-1){ //container to load
+                vector<vector<Container*>> g = temp->getGrid();
+                temp->trickleDown();
+                steps.push_back(new Ship(temp));
+                temp->removeContainer(g[idxs[i].first][idxs[i].second]);
+                steps.push_back(new Ship(temp));
+            }
+            else if(tmp.at(k).first == NULL && tmp.at(k).second != NULL){ //container to buffer
+                moveToBuffer(buffer, tmp.at(k).second);
+                temp->trickleDown();
+                temp->removeContainer(tmp.at(k).second);
+            }
+        }
+        idxs.erase(idxs.begin()+i);
+        --i;
+    }
+    pair<int, int> emptyBuffer = bufferEmpty(buffer);
+    while(emptyBuffer.first != -1){
+        temp->addContainer(buffer[emptyBuffer.first][emptyBuffer.second], -1);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+        removeFromBuffer(buffer, emptyBuffer);
+        emptyBuffer = bufferEmpty(buffer);
+    }
+    for(int i = 0; i < steps.size()-1; ++i){
+        if(compare(steps.at(i),steps.at(i+1))){
+            steps.erase(steps.begin()+i);
+            --i;
+        }
+    }
+
+    for(int i = 0; i < c.size(); ++i){
+        Container *loadingContainer = new Container(c.at(i)->weight, c.at(i)->contents);
+        int n = availableColumn(idxs);
+        temp->addContainer(loadingContainer, n);
+        temp->trickleDown();
+        steps.push_back(new Ship(temp));
+    }
+
+    for(int i = steps.size()-1; i > 0; --i){
+        steps[i]->setParent(steps[i-1]);
+    }
+    steps.at(0)->setParent(NULL);
+    return steps.at(steps.size()-1);
+}
+
+vector<vector<Container*>> helper::intializeBuf(){
+    vector<vector<Container*>> buf = {                                   // ij (row, column)
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")},
+        {new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"), new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED"),new Container(0, "UNUSED")}
+    };
+    return buf;
+}
+
+Ship* helper::balanceAlgorithm(queue<Ship*> &q){
+  Ship* parent = q.front();
+  q.pop();
+
+  vector<pair<int,int>> pick_up_indexes = parent->pickUp();
+  vector<Ship*> children;
+  for(int i = 0; i < pick_up_indexes.size(); ++i){
+    vector<Ship*> drop_tmp = parent->dropDown(pick_up_indexes.at(i));
+    for(int j = 0; j < drop_tmp.size(); ++j){
+      children.push_back(drop_tmp.at(j));
+    }
+  }
+
+  for(int i = 0; i < children.size(); i++){
+    if(duplicate.find(children.at(i)->getUniqueKey()) != duplicate.end()){ //checks if child has already been explored
+      children.erase(children.begin() + i);
+      --i;
+      continue;
+    }
+
+    if(isGoalState(children.at(i))){
+      emptyQueue(q);
+      cout << "CALLED GOAL STATE IN SEARCH" << endl;
+      //dont we want to return the goal state somewhere here?
+      return children.at(i);
+    }
+
+    if(qSize < q.size()){qSize = q.size();}
+
+  }
+  for(int i = 0; i < children.size(); i++){
+    q.push(children.at(i));
+  }
+  q = sortQueue(q);
+
+  return NULL;
+}
+
+void helper::moveToBuffer(vector<vector<Container*>> &buf, Container *c){
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight == -1){
+                buf[j][i] = c;
+                return;
+            }
+        }
+    }
+}
+
+void helper::outputBuffer(vector<vector<Container*>> b){
+    for(int i = 0; i < b.size(); ++i ){
+        for(int j = 0; j < b.at(0).size(); j++){
+            cout << b.at(i).at(j)->weight << '\t';
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+
+pair<int,int> helper::bufferEmpty(vector<vector<Container*>> buf){
+    pair<int, int> idx = make_pair(-1,-1);
+    for(int i = 0; i < buf[0].size(); ++i){
+        for(int j = buf.size()-1; j > -1; --j){
+            if(buf[j][i]->weight != -1){
+                idx.first = j;
+                idx.second = i;
+                return idx;
+            }
+        }
+    }
+    return idx;
+}
+
+
+void helper::removeFromBuffer(vector<vector<Container*>> &buf, pair<int,int> idx){
+    buf[idx.first][idx.second] = new Container(0, "UNUSED");
+}
+
+int helper::availableColumn(vector<pair<int,int>> idxs){
+    int n = -1;
+    bool exists = false;
+    for(int i = 0; i < 12; ++i){
+        exists = false;
+        for(int j = 0; j < idxs.size(); ++j){
+            if(idxs.at(j).second == i){
+                exists = true;
+            }
+        }
+        if(!exists){
+            return i;
+        }
+    }
+    return n;
+}
+
+bool helper::compare(Ship* a, Ship* b){
+    vector<vector<Container*>> gridA = a->getGrid();
+    vector<vector<Container*>> gridB = b->getGrid();
+
+    for(int i = 0; i < gridA.size(); ++i){
+        for(int j = 0; j < gridA[0].size(); ++j){
+            if(gridA[i][j]->weight != gridB[i][j]->weight){
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void helper::buf_print(vector<vector<Container*>> buf){
+    for(int i =0; i < buf.size(); ++i ){
+        for(int j = 0; j < buf.at(0).size(); j++){
+            cout << buf.at(i).at(j)->weight << "   ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+
+}
+
+pair<int, int> helper::first_buffer_loc(vector<vector<Container*>> buf){
+  for(int i = buf.size()-1; i > 0; i--){
+    for(int j = buf.at(i).size()-1; j > 0; j--){
+      if(buf.at(i).at(j)->weight == -1){
+        return make_pair(i,j);
+      }
+    }
+  }
+
+  return make_pair(0,0);
+}
+
+
+vector<Container*> helper::sort_buf(vector<Container*> buf){
+    int min_idx;
+    for (int i = 0; i < buf.size()-1; i++){
+        // Find the minimum element in unsorted array
+        min_idx = i;
+        for (int j = i+1; j < buf.size(); j++){
+          if (buf.at(j)->weight < buf.at(i)->weight){
+              min_idx = j;
+          }
+        }
+        // Swap the found minimum element with the first element
+        swap(buf.at(min_idx), buf.at(i));
+    }
+
+    return buf;
+}
+
+vector<string> helper::SIFT(Ship* problem){
+
+    if(problem->check_SIFT()){
+      //do sift operation instead of other operation
+
+      vector<string> move_output;
+      // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
+      vector<vector<Container*>> buf =  intializeBuf();
+
+      vector<Container*> buf_sorted;
+      int first = 0;
+      int second = 0;
+      int third = 0;
+      int fourth = 0;
+
+      Ship *move = new Ship(problem->getGrid());
+      vector<vector<Container*>> g = move->getGrid();
+      for(int i = 0; i < g.size();i++){
+        for(int j = 0; j < g.at(0).size(); ++j){
+            if(g.at(i).at(j)->weight != -1 && g.at(i).at(j)->weight != -2){
+              // need helper to find first avalible in bottom row of buf
+              first = i+1;
+              second = j+1;
+              pair<int, int> location = first_buffer_loc(buf);
+              third = location.first + 1;
+              fourth = location.second + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";
+              move_output.push_back(directions);
+              buf.at(location.first).at(location.second)->weight = g.at(i).at(j)->weight;
+              Container* element = new Container(g.at(i).at(j)->weight, g.at(i).at(j)->contents);
+              buf_sorted.push_back(element);
+              g.at(i).at(j)->weight = -1;
+
+            }
+        }
+      }
+
+
+
+      // buf_print(buf);
+      sort_buf(buf_sorted);
+
+      int buf_population = buf_sorted.size();
+
+      int z = 0;
+      int buf_mod = 0;
+      second = 26;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2) - 1); j > 0; j--){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 0  && g.at(i).at(j)->weight != -2){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              g.at(i).at(j)->contents = buf_sorted.at(z)->contents;
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);
+              move_output.push_back(directions);
+              z = z + 2;
+            }
+        }
+      }
+
+
+      z = 1;
+      buf_mod = 0;
+      second = 25;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2)); j < g.at(0).size(); j++){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && g.at(i).at(j)->weight != -2 ){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);
+              move_output.push_back(directions);
+              z = z + 2;
+            }
+        }
+      }
+      move->setGrid(g);
+
+      // for(int i = 0; i < move_output.size(); i++){
+      //   cout << move_output.at(i) << endl;
+      // }
+
+
+      return move_output;
     }
 }

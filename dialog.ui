@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>5</number>
+    <number>3</number>
    </property>
    <widget class="QWidget" name="uploadManifestPage">
     <widget class="QPushButton" name="uploadManifestButton">
@@ -69,13 +69,13 @@
     </widget>
    </widget>
    <widget class="QWidget" name="loadContainerPage">
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="enterContainersLabel">
      <property name="geometry">
       <rect>
-       <x>130</x>
-       <y>90</y>
-       <width>341</width>
-       <height>16</height>
+       <x>110</x>
+       <y>10</y>
+       <width>421</width>
+       <height>91</height>
       </rect>
      </property>
      <property name="text">
@@ -85,11 +85,24 @@
     <widget class="QLineEdit" name="loadContainerLineEdit">
      <property name="geometry">
       <rect>
-       <x>210</x>
+       <x>140</x>
        <y>120</y>
-       <width>161</width>
+       <width>291</width>
        <height>51</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="doneLoadingButton">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>190</y>
+       <width>100</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Done</string>
      </property>
     </widget>
    </widget>
@@ -192,14 +205,14 @@
     <widget class="QLabel" name="moveContainerLabel">
      <property name="geometry">
       <rect>
-       <x>190</x>
+       <x>40</x>
        <y>100</y>
-       <width>171</width>
-       <height>16</height>
+       <width>521</width>
+       <height>61</height>
       </rect>
      </property>
      <property name="text">
-      <string>Move container ___ to ___</string>
+      <string/>
      </property>
     </widget>
    </widget>
@@ -256,7 +269,4 @@
  </widget>
  <resources/>
  <connections/>
- <buttongroups>
-  <buttongroup name="buttonGroup"/>
- </buttongroups>
 </ui>
