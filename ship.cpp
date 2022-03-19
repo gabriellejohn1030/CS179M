@@ -622,6 +622,7 @@ double Ship::getUniqueKey(){
 string Ship::outputMoves(Ship* parent, Ship* child) {
     string result = "";
     bool ifFound = false;
+    bool b = true;
 
     for(int i = 0; i < parent->grid.size(); i++) {
         for(int j = 0; j < parent->grid.at(i).size(); j++) {
@@ -634,6 +635,9 @@ string Ship::outputMoves(Ship* parent, Ship* child) {
         if(ifFound == true) {
             break;
         }
+    }
+    if(!ifFound){
+        result += "Container from buffer/truck \n";
     }
     ifFound = false;
     for(int i = 0; i < child->grid.size(); i++) {
@@ -648,11 +652,16 @@ string Ship::outputMoves(Ship* parent, Ship* child) {
             break;
         }
     }
+    if(!ifFound){
+        if (b) {
+            result += " to a truck.\n";
+            b = !b;
+        } else {
+            result += " to the buffer.\n";
+        }
+    }
     return result;
-
 }
-
-
 
 bool Ship::check_SIFT(){
     bool check = false;

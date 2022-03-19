@@ -72,10 +72,10 @@
     <widget class="QLabel" name="enterContainersLabel">
      <property name="geometry">
       <rect>
-       <x>110</x>
+       <x>30</x>
        <y>30</y>
-       <width>491</width>
-       <height>71</height>
+       <width>701</width>
+       <height>81</height>
       </rect>
      </property>
      <property name="text">
@@ -193,9 +193,9 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>290</y>
-       <width>271</width>
-       <height>31</height>
+       <y>250</y>
+       <width>391</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
@@ -205,10 +205,10 @@
     <widget class="QLabel" name="moveContainerLabel">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>30</x>
        <y>120</y>
-       <width>541</width>
-       <height>81</height>
+       <width>721</width>
+       <height>121</height>
       </rect>
      </property>
      <property name="text">
@@ -220,7 +220,7 @@
   <widget class="QLabel" name="currUserLabel">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>210</x>
      <y>10</y>
      <width>331</width>
      <height>20</height>
@@ -248,8 +248,8 @@
     <rect>
      <x>10</x>
      <y>0</y>
-     <width>100</width>
-     <height>32</height>
+     <width>121</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="text">

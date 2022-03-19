@@ -44,12 +44,13 @@ class helper : public QObject {
 
         vector<string> SIFT(Ship *);
         vector<int> estimated_time_SIFT(Ship*);
-        vector<double> estimatedTime(Ship* , vector<Container*> );
+        vector<int> estimatedTime(Ship* , vector<Container*> );
+        vector<int> getTimes(){return times;}
 
+        void updateManifest(Ship* tmp, string fileName);
 //        Ship* searchAlgorithm(queue<Ship*> &);
-
+        Ship *getGoal() {return goal;}
         void balance(Ship *problem);
-
         vector<string> getMoves() { return moves; }
 
     signals:
@@ -61,6 +62,8 @@ class helper : public QObject {
         map<double, vector<vector<Container*>>> duplicate;
         unsigned long qSize;
         vector<string> moves;
+        vector<int> times;
+        Ship *goal;
 };
 
 #endif // HELPER_H

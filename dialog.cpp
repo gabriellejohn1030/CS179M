@@ -28,15 +28,15 @@ Dialog::Dialog(QWidget *parent)
     ui->enterContainersLabel->setAlignment(Qt::AlignLeft);
 
     QList<QPushButton *> allButtons = ui->stackedWidget->findChildren<QPushButton *>();
-
+    ui->backButton->setVisible(false);
+    ui->backButton->setFocusPolicy(Qt::NoFocus);
     for (auto it: allButtons) {
         it->setFocusPolicy(Qt::NoFocus);
     }
 
     ui->debugModeCheckBox->setChecked(debugMode);
-    ui->backButton->setVisible(false);
     ui->skipPageLoadingButton->setVisible(debugMode);
-//    ui->debugModeCheckBox->setVisible(debugMode);
+    ui->debugModeCheckBox->setVisible(debugMode);
 }
 
 Dialog::~Dialog() {
@@ -55,6 +55,7 @@ void Dialog::on_loginTextEdit_returnPressed() {
         ui->stackedWidget->setCurrentIndex(currentPage::uploadManifestPage);
         QString userLabel = "Current User: " + currUser;
         ui->currUserLabel->setText(userLabel);
+        ui->currUserLabel->setAlignment(Qt::AlignCenter);
         ui->loginTextEdit->clear();
     }
 }
@@ -81,6 +82,7 @@ void Dialog::on_uploadManifestButton_clicked() {
             initializeUnloadCheckboxes();
             // gray out checkboxes
             ui->stackedWidget->setCurrentIndex(currentPage::balanceLoadPage);
+            ui->backButton->setVisible(true);
         }
     }
 }
@@ -119,10 +121,14 @@ void Dialog::initializeUnloadCheckboxes() {
 
 void Dialog::on_backButton_clicked() {
     ui->stackedWidget->setCurrentIndex(ui->stackedWidget->currentIndex()-1);
+    if (ui->stackedWidget->currentIndex() == currentPage::uploadManifestPage) {
+        ui->backButton->setVisible(false);
+    }
 }
 
 void Dialog::on_balanceButton_clicked() {
     ui->stackedWidget->setCurrentIndex(currentPage::loadingPage);
+    ui->backButton->setVisible(false);
     if (!debugMode) {
         QTimer::singleShot(10, [this]() {
             h.balance(problem);
@@ -161,6 +167,17 @@ void Dialog::on_nextStepButton_clicked() {
         ui->nextStepButton->setText("Next");
         isFinished = false;
         ui->stackedWidget->setCurrentIndex(currentPage::uploadManifestPage);
+//        ui->backButton->setVisible(true);
+        h.updateManifest(h.getGoal(), manifestFileName.toStdString());
+
+        QMessageBox note;
+        QString temp = manifestFileName;
+        temp.chop(4);
+        note.setText(temp + "OUTBOUND.txt was downloaded");
+        log.WriteToLog("Finished a Cycle. Manifest " + temp + " was written"
+                       + " to desktop, and a reminder pop-up to operator to send file was displayed.");
+        note.exec();
+//        ui->backButton->setVisible(true);
     } else if (currStep == totalSteps-1) {
         ui->moveContainerLabel->setText("Finished all moves");
         ui->moveContainerLabel->setAlignment(Qt::AlignCenter);
@@ -170,9 +187,16 @@ void Dialog::on_nextStepButton_clicked() {
         isFinished = true;
     } else {
         currStep++;
-        ui->moveContainerLabel->setText(QString::fromStdString(h.getMoves()[currStep]));
+        QString currMove = QString::fromStdString(h.getMoves()[currStep]);
+        if (currMove.contains("Container from buffer/truck")) {
+            log.WriteToLog("Container is onloaded.");
+        } else if (currMove.contains("to a truck.")) {
+            log.WriteToLog("Container is offloaded.");
+        }
+        ui->moveContainerLabel->setText(currMove);
         ui->moveContainerLabel->setAlignment(Qt::AlignCenter);
         ui->currStepPageLabel->setText("Step " + QString::number(currStep + 1) + "/" + QString::number(totalSteps));
+        ui->estimatedTimeLabel->setText("Estimated Time For Move: " + QString::number(timeEstimates.at(currStep)) + " Minutes");
     }
     qDebug() << "Current step: " << currStep << " out of " << totalSteps << "total Steps";
 }
@@ -198,7 +222,7 @@ void Dialog::on_loadContainerLineEdit_returnPressed() {
     }
     if (!cFound || fail) {
         QMessageBox note;
-        note.setText("Please input in correct format.");
+        note.setText("Please input in correct format. Ensure mass is greater than zero.");
         note.exec();
         fail = true;
     }
@@ -222,6 +246,7 @@ void Dialog::on_loadContainerLineEdit_returnPressed() {
 void Dialog::on_unloadButton_clicked() {
     // iterate through checkboxes and see which ones are checked
     // jump to loading page
+    ui->backButton->setVisible(false);
     ui->stackedWidget->setCurrentIndex(currentPage::loadingPage);
 
     for (int i = 0; i < 96; i++) {
@@ -255,8 +280,14 @@ void Dialog::onBalanceFinished(bool success) {
         qDebug() << "Total steps: " << totalSteps;
         ui->currStepPageLabel->setText("Step " + QString::number(currStep + 1) + "/" + QString::number(totalSteps));
         if (problem->check_SIFT()) {
-//            timeEstimates = h.estimated_time_SIFT(problem);
-            ui->estimatedTimeLabel->setText("Estimated time: " + QString::number)
+            qDebug() << "Check Sift returns true";
+            timeEstimates = h.estimated_time_SIFT(problem);
+            ui->estimatedTimeLabel->setText("Estimated Time For Move: " + QString::number(timeEstimates.at(0)) +
+                                            " Minutes");
+        } else {
+            timeEstimates = h.getTimes();
+            qDebug() << timeEstimates.size();
+            ui->estimatedTimeLabel->setText("Estimated time For Move: "  + QString::number(timeEstimates.at(0)) + " Minutes");
         }
         vector<string> moves = h.getMoves();
         for (auto it: moves) {
@@ -274,8 +305,10 @@ void Dialog::onLoadAndUnloadFinished(bool success) {
         ui->moveContainerLabel->setAlignment(Qt::AlignCenter);
 
         totalSteps = h.getMoves().size();
+        timeEstimates = h.getTimes();
         qDebug() << "Total steps: " << totalSteps;
         ui->currStepPageLabel->setText("Step " + QString::number(currStep + 1) + "/" + QString::number(totalSteps));
+        ui->estimatedTimeLabel->setText("Estimated time For Move: "  + QString::number(timeEstimates.at(0)) + " Minutes");
         vector<string> moves = h.getMoves();
         for (auto it: moves) {
             qDebug() << QString::fromStdString(it);

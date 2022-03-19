@@ -133,20 +133,26 @@ void helper::balance(Ship *problem) {
           duplicate.insert(pair<double, vector<vector<Container*>>>(node->getUniqueKey(), node->getGrid())); //inserts node into the map
 
           if (isGoalState(node)){
-            qDebug() << "GOAL STATE FOUND";
-            moves = outputGoalSteps(node);
-            emit balanceFinished(true);
-            return;
-          }
-
-          Ship *goal = balanceAlgorithm(q);
-
-          if(goal != NULL){
               qDebug() << "GOAL STATE FOUND";
-              moves = outputGoalSteps(goal);
+              vector<Container*> nullvec;
+              moves = outputGoalSteps(node);
+              times = estimatedTime(node, nullvec);
+              this->goal = node;
               emit balanceFinished(true);
               return;
-          }
+            }
+
+            Ship *goal = balanceAlgorithm(q);
+
+            if(goal != NULL){
+                qDebug() << "GOAL STATE FOUND";
+                vector<Container*> nullvec;
+                moves = outputGoalSteps(goal);
+                times = estimatedTime(goal, nullvec);
+                this->goal = goal;
+                emit balanceFinished(true);
+                return;
+            }
         }
     } else {
         moves = SIFT(problem);
@@ -220,6 +226,8 @@ bool helper::unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<
     }
     steps.at(0)->setParent(NULL);
     moves = outputGoalSteps(steps.at(steps.size()-1));
+    times = estimatedTime(steps.at(steps.size()-1), c);
+    this->goal = steps.at(steps.size()-1);
     emit loadAndUnloadFinished(true);
     return true;
 }
@@ -482,7 +490,7 @@ vector<string> helper::SIFT(Ship* problem){
 
 
 
-int helper::estimated_time_SIFT(Ship* problem){
+vector<int> helper::estimated_time_SIFT(Ship* problem){
 
     if(problem->check_SIFT()){
       //do sift operation instead of other operation
@@ -571,26 +579,24 @@ int helper::estimated_time_SIFT(Ship* problem){
         }
       }
       move->setGrid(g);
-
-
       return time_outputs;
     }
 }
 
 
-vector<double> helper::estimatedTime(Ship* p, vector<Container*> load){
-    vector<double> times;
+vector<int> helper::estimatedTime(Ship* p, vector<Container*> load){
+    vector<int> times;
     Ship *child = p;
     Ship *parent = child->getParent();
     bool movedToTruck = true;
 
     while(parent != NULL){
-        double t = 0.0;
+        int t = 0;
         vector<vector<Container*>> cg = child->getGrid(), pg = parent->getGrid();
         pair<int, int> cIdx = make_pair(-1,-1), pIdx = make_pair(-1,-1);
 
-        for(int i = 0; i < 8; ++i){
-            for(int j = 0; j < 12; ++j){
+        for(int i = 0; i < cg.size(); ++i){
+            for(int j = 0; j < cg.at(i).size(); ++j){
                 if(cg[i][j]->weight != pg[i][j]->weight && cg[i][j]->weight > -1){
                     cIdx.first = i;
                     cIdx.second = j;
@@ -653,4 +659,45 @@ vector<double> helper::estimatedTime(Ship* p, vector<Container*> load){
         parent = child->getParent();
     }
     return times;
+}
+
+void helper::updateManifest(Ship* tmp, string fileName){
+    vector<vector<Container*>> grid = tmp->getGrid();
+
+    ofstream file;
+    string newF = "";
+
+    for(int i = 0; i < fileName.size(); ++i){
+        if(fileName.at(i) == '.'){
+            newF += "OUTBOUND";
+        }
+        newF += fileName.at(i);
+    }
+    file.open(newF);
+
+    if(!file.is_open()){
+        cout << "Error opening file" << endl;
+    }
+
+    reverse(grid.begin(), grid.end());
+
+    for(int i = 0; i < grid.size(); ++i){
+        for(int j = 0; j < grid[0].size(); ++j){
+            Container* c = grid[i][j];
+            int w = c->weight;
+            if(w < 0){
+                w = 0;
+            }
+            string weight = to_string(w);
+            while(weight.size() < 5){
+                weight = "0" + weight;
+            }
+            if(j < 10){
+                file << "[0" << i+1 << ",0" << j+1 << "], {" + weight + "}, " << c->contents << "\n";
+            }else{
+                file << "[0" << i+1 << "," << j+1 << "], {" + weight + "}, " << c->contents << "\n";
+            }
+        }
+    }
+    file.close();
 }
