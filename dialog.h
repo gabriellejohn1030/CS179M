@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QVector>
 #include <QTimer>
+#include <QPalette>
 
 #include "logger.h"
 #include "ship.h"
@@ -31,6 +32,7 @@ enum currentPage {
     loadingPage,
     viewStepPage,
 };
+static constexpr double SCALE_FACTOR = 1.3;
 
 class Dialog : public QDialog
 {
@@ -67,6 +69,7 @@ private slots:
 
     void onBalanceFinished(bool success);
     void onContainersFound(int c);
+    void onLoadAndUnloadFinished(bool success);
 
     void on_doneLoadingButton_clicked();
 
@@ -77,13 +80,15 @@ private:
     logger log;
     helper h;
     Ship* problem;
-    QVector<Container*> loadOnContainers;
+    vector<Container*> loadOnContainers;
+    vector<pair<int,int>> unloadContainers;
 
     bool debugMode;
     bool loggedIn;
     bool isFinished;
     int currStep;
     int totalSteps;
+    vector<int> timeEstimates;
 
     QString currUser;
     QString manifestFileName;

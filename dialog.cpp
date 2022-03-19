@@ -5,7 +5,6 @@ Dialog::Dialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::Dialog) {
     ui->setupUi(this);
-
     debugMode = false;
     loggedIn = false;
     isFinished = false;
@@ -15,11 +14,16 @@ Dialog::Dialog(QWidget *parent)
 
     connect(&h, &helper::containersFound, this, &Dialog::onContainersFound);
     connect(&h, &helper::balanceFinished, this, &Dialog::onBalanceFinished);
+    connect(&h, &helper::loadAndUnloadFinished, this, &Dialog::onLoadAndUnloadFinished);
     ui->stackedWidget->setCurrentIndex(currentPage::uploadManifestPage);
     this->setWindowTitle("");
-
+    QFont custom_font = QFont("Arial", 16, QFont::Bold);
+//    custom_font.setWeight(18);
+//    QApplicationsetFont(custom_font, "QLabel")
+    QApplication::setFont(custom_font, "QLabel");
+    QApplication::setFont(custom_font, "QPushButton");
     ui->loginTextEdit->setPlaceholderText("Enter login username");
-    ui->enterContainersLabel->setText("Enter containers in format: {mass, container name}\n"
+    ui->enterContainersLabel->setText("Enter containers in format: {mass, container name} followed by return key.\n"
                                       "Click 'Done' when finished.");
     ui->enterContainersLabel->setAlignment(Qt::AlignLeft);
 
@@ -28,15 +32,6 @@ Dialog::Dialog(QWidget *parent)
     for (auto it: allButtons) {
         it->setFocusPolicy(Qt::NoFocus);
     }
-
-    // Checkboxes position works as 0-7 down, then 8-15, etc
-//    int size = 30;
-//    for(int x = 0; x < 12; ++x){
-//        for(int y = 0; y < 8; ++y){
-//            checkBoxVector.append(new QCheckBox(ui->unloadContainerPage));
-//            checkBoxVector.last()->setGeometry((x * size)+125, ((y * size)+10), size, size);
-//        }
-//    }
 
     ui->debugModeCheckBox->setChecked(debugMode);
     ui->backButton->setVisible(false);
@@ -101,30 +96,21 @@ vector<vector<Container*>> Dialog::Transpose(const vector<vector<Container*>> &g
 }
 
 void Dialog::initializeUnloadCheckboxes() {
+    qDeleteAll(checkBoxVector);
     checkBoxVector.clear();
     int size = 30;
     vector<vector<Container*>> grid = Transpose(problem->getGrid());
-
     for (int i = 0; i < grid.size(); i++) {
         for (int j = 0; j < grid[i].size(); j++) {
             checkBoxVector.append(new QCheckBox(ui->unloadContainerPage));
-            if (grid[i][j]->contents == "NAN") {
+            if (grid[i][j]->contents == "NAN" || grid[i][j]->contents == "UNUSED") {
                 checkBoxVector.last()->setEnabled(false);
-            } /*else if (grid[i][j]->contents != "UNUSED") {
-                checkBoxVector.last()->setText(QString::fromStdString(grid[i][j]->contents));
-            }*/
-//            int a = checkBoxVector.last()->size()
-            checkBoxVector.last()->setGeometry((i * size)+125, ((j * size)+10), size, size);
+            }
+            checkBoxVector.last()->setGeometry(((i * size)+125)*SCALE_FACTOR, (((j * size)+10))*SCALE_FACTOR, size*SCALE_FACTOR, size*SCALE_FACTOR);
         }
     }
     QLabel selectUnloadContainers("Select Containers to Unload", ui->unloadContainerPage);
-    selectUnloadContainers.setGeometry(100, 100, 300, 100);
-    labelChkVector.append(new QLabel("Column", ui->unloadContainerPage));
-    labelChkVector.last()->setGeometry(checkBoxVector.first()->geometry().x(),
-                                       checkBoxVector.first()->geometry().y() - 55, 100, 100);
-    labelChkVector.append(new QLabel("Row", ui->unloadContainerPage));
-    labelChkVector.last()->setGeometry(checkBoxVector.first()->geometry().x() - 35,
-                                       checkBoxVector.first()->geometry().y() - 33, 100, 100);
+    selectUnloadContainers.setGeometry(100*SCALE_FACTOR, 100*SCALE_FACTOR, 300*SCALE_FACTOR, 100*SCALE_FACTOR);
 
     for (auto it: checkBoxVector) {
         it->setFocusPolicy(Qt::NoFocus);
@@ -236,14 +222,27 @@ void Dialog::on_loadContainerLineEdit_returnPressed() {
 void Dialog::on_unloadButton_clicked() {
     // iterate through checkboxes and see which ones are checked
     // jump to loading page
-
     ui->stackedWidget->setCurrentIndex(currentPage::loadingPage);
-    // call unloading/loading function
+
     for (int i = 0; i < 96; i++) {
         if (checkBoxVector[i]->isChecked()) {
-            qDebug() << "box is checked at: " << i;
+            unloadContainers.push_back(pair<int,int>(i%8,i/8));
+            qDebug() << "box is checked at: " << i%8 << " " << i/8 << " with i of: " << i;
         }
     }
+    qDebug() << "Containers being unloaded:";
+    for (auto it: unloadContainers) {
+        qDebug() << it.first << " " << it.second;
+    }
+    qDebug() << "Containers being loaded:";
+    for (auto it: loadOnContainers) {
+        qDebug() << QString::fromStdString(it->contents) << " " << it->weight;
+    }
+    h.unloadAndLoadAlgorithm(unloadContainers, problem, loadOnContainers);
+
+    // call unloading/loading function
+    // 23 = 7,2 maps to (23+1) / (2+1)
+
 }
 
 void Dialog::onBalanceFinished(bool success) {
@@ -255,13 +254,35 @@ void Dialog::onBalanceFinished(bool success) {
         totalSteps = h.getMoves().size();
         qDebug() << "Total steps: " << totalSteps;
         ui->currStepPageLabel->setText("Step " + QString::number(currStep + 1) + "/" + QString::number(totalSteps));
-
+        if (problem->check_SIFT()) {
+//            timeEstimates = h.estimated_time_SIFT(problem);
+            ui->estimatedTimeLabel->setText("Estimated time: " + QString::number)
+        }
         vector<string> moves = h.getMoves();
         for (auto it: moves) {
             qDebug() << QString::fromStdString(it);
         }
     } else {
         qDebug() << "Balancing failed.";
+        ui->stackedWidget->setCurrentIndex(currentPage::uploadManifestPage);
+    }
+}
+
+void Dialog::onLoadAndUnloadFinished(bool success) {
+    if (success) {
+        ui->moveContainerLabel->setText(QString::fromStdString(h.getMoves()[0]));
+        ui->moveContainerLabel->setAlignment(Qt::AlignCenter);
+
+        totalSteps = h.getMoves().size();
+        qDebug() << "Total steps: " << totalSteps;
+        ui->currStepPageLabel->setText("Step " + QString::number(currStep + 1) + "/" + QString::number(totalSteps));
+        vector<string> moves = h.getMoves();
+        for (auto it: moves) {
+            qDebug() << QString::fromStdString(it);
+        }
+        ui->stackedWidget->setCurrentIndex(currentPage::viewStepPage);
+    } else {
+        qDebug() << "Failure";
         ui->stackedWidget->setCurrentIndex(currentPage::uploadManifestPage);
     }
 }

@@ -24,7 +24,7 @@ class helper : public QObject {
 
         Ship* balanceAlgorithm(queue<Ship*> &);
 
-        Ship* unloadAndLoadAlgorithm(vector<pair<int,int>>, Ship*, vector<Container*> c);
+        bool unloadAndLoadAlgorithm(vector<pair<int,int>>, Ship*, vector<Container*> c);
 
         vector<vector<Container*>> initializeVec();
 
@@ -55,6 +55,7 @@ class helper : public QObject {
     signals:
         void balanceFinished(bool success);
         void containersFound(int c);
+        void loadAndUnloadFinished(bool success);
 
     private:
         map<double, vector<vector<Container*>>> duplicate;

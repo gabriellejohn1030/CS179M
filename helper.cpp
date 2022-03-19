@@ -157,7 +157,7 @@ void helper::balance(Ship *problem) {
     return;
 }
 
-Ship* helper::unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<Container*> c){
+bool helper::unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector<Container*> c){
     vector<vector<Container*>> buffer = intializeBuf();
     Ship *temp = p;
     vector<Ship*> steps;
@@ -219,7 +219,9 @@ Ship* helper::unloadAndLoadAlgorithm(vector<pair<int,int>> idxs, Ship* p, vector
         steps[i]->setParent(steps[i-1]);
     }
     steps.at(0)->setParent(NULL);
-    return steps.at(steps.size()-1);
+    moves = outputGoalSteps(steps.at(steps.size()-1));
+    emit loadAndUnloadFinished(true);
+    return true;
 }
 
 vector<vector<Container*>> helper::intializeBuf(){
