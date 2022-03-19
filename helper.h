@@ -43,6 +43,8 @@ class helper : public QObject {
         vector<Container*> sort_buf(vector<Container*>);
 
         vector<string> SIFT(Ship *);
+        int estimated_time_SIFT(Ship*);
+        vector<double> estimatedTime(Ship* , vector<Container*> );
 
 //        Ship* searchAlgorithm(queue<Ship*> &);
 

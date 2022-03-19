@@ -476,3 +476,175 @@ vector<string> helper::SIFT(Ship* problem){
       return move_output;
     }
 }
+
+
+
+
+int helper::estimated_time_SIFT(Ship* problem){
+
+    if(problem->check_SIFT()){
+      //do sift operation instead of other operation
+
+      vector<string> move_output;
+      int time = 0;
+      // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
+      vector<vector<Container*>> buf =  intializeBuf();
+
+      vector<Container*> buf_sorted;
+      int first = 0;
+      int second = 0;
+      int third = 0;
+      int fourth = 0;
+
+      Ship *move = new Ship(problem->getGrid());
+      vector<vector<Container*>> g = move->getGrid();
+      for(int i = 0; i < g.size();i++){
+        for(int j = 0; j < g.at(0).size(); ++j){
+            if(g.at(i).at(j)->weight != -1 && g.at(i).at(j)->weight != -2){
+              // need helper to find first avalible in bottom row of buf
+              first = i+1;
+              second = j+1;
+              pair<int, int> location = first_buffer_loc(buf);
+              third = location.first + 1;
+              fourth = location.second + 1;
+              time = time + i + j + (2 * 15) + (2 * third) + (2 * (24 - fourth));
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";
+              move_output.push_back(directions);
+              buf.at(location.first).at(location.second)->weight = g.at(i).at(j)->weight;
+              Container* element = new Container(g.at(i).at(j)->weight, g.at(i).at(j)->contents);
+              buf_sorted.push_back(element);
+              g.at(i).at(j)->weight = -1;
+
+            }
+        }
+      }
+
+      sort_buf(buf_sorted);
+
+      int buf_population = buf_sorted.size();
+
+      int z = 0;
+      int buf_mod = 0;
+      second = 26;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2) - 1); j > 0; j--){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 0  && g.at(i).at(j)->weight != -2){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              g.at(i).at(j)->contents = buf_sorted.at(z)->contents;
+              time = time + (i+1) + (j + 1);
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);
+              move_output.push_back(directions);
+              z = z + 2;
+            }
+        }
+      }
+
+
+      z = 1;
+      buf_mod = 0;
+      second = 25;
+      for(int i = g.size()-1; i > 0;i--){
+        for(int j = ((g.at(0).size()/2)); j < g.at(0).size(); j++){
+            buf_mod = z % 2;
+            if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && g.at(i).at(j)->weight != -2 ){
+              g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
+              time = time + (i+1) + (j + 1);
+              first = 4;
+              second = second - 2;
+              third = i + 1;
+              fourth = j + 1;
+              string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " of the buffer " + " to row " + to_string(third) + " and column " + to_string(fourth);
+              move_output.push_back(directions);
+              z = z + 2;
+            }
+        }
+      }
+      move->setGrid(g);
+
+
+      return time;
+    }
+}
+
+
+vector<double> helper::estimatedTime(Ship* p, vector<Container*> load){
+    vector<double> times;
+    Ship *child = p;
+    Ship *parent = child->getParent();
+    bool movedToTruck = true;
+
+    while(parent != NULL){
+        double t = 0.0;
+        vector<vector<Container*>> cg = child->getGrid(), pg = parent->getGrid();
+        pair<int, int> cIdx = make_pair(-1,-1), pIdx = make_pair(-1,-1);
+
+        for(int i = 0; i < 8; ++i){
+            for(int j = 0; j < 12; ++j){
+                if(cg[i][j]->weight != pg[i][j]->weight && cg[i][j]->weight > -1){
+                    cIdx.first = i;
+                    cIdx.second = j;
+                } else if(cg[i][j]->weight != pg[i][j]->weight && pg[i][j]->weight > -1){
+                    pIdx.first = i;
+                    pIdx.second = j;
+                }
+            }
+        }
+        if(cIdx.first == -1 || pIdx.first == -1){ //container in buffer or truck
+            t = pIdx.first + 1;
+            if(movedToTruck){
+                t += 2;
+                movedToTruck = false;
+            } else{
+                t += 15;
+            }
+        } else{
+            t = max(cIdx.first, pIdx.first) - min(cIdx.first, pIdx.first) + 1;
+            t += max(cIdx.second, pIdx.second) - min(cIdx.second, pIdx.second) + 1;
+            int cnt = 0;
+            int low, high, height;
+            if(min(cIdx.second, pIdx.second) == pIdx.second){
+                low = pIdx.second;
+                high = cIdx.second;
+                height = pIdx.first;
+            } else{
+                low = cIdx.second;
+                high = pIdx.second;
+                height = cIdx.first;
+            }
+            if(height < 0){height = 1;}
+            for(int i = low; i <= high; ++i){
+                if(pg[height][i]->weight < 0){
+                    ++cnt;
+                    continue;
+                }
+                int raised = 0;
+                while(height > -1 && pg[height][i]->weight > -1){
+                    ++raised;
+                    --height;
+                    if(height < 0){
+                        ++raised;
+                        break;
+                    }
+                }
+                if(height < 0){
+                    height = 0;
+                }
+                raised = raised*2;
+                cnt += raised;
+            }
+            t += cnt;
+        }
+        t += load.size() * 2;
+
+        cIdx = pIdx = make_pair(-1,-1);
+        times.push_back(t);
+        child = parent;
+        parent = child->getParent();
+    }
+    return times;
+}
