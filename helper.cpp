@@ -486,6 +486,7 @@ int helper::estimated_time_SIFT(Ship* problem){
       //do sift operation instead of other operation
 
       vector<string> move_output;
+      vector<int> time_outputs;
       int time = 0;
       // Move container from row 1 and column 5 to row 7 and column 6 (of buffer)
       vector<vector<Container*>> buf =  intializeBuf();
@@ -508,6 +509,7 @@ int helper::estimated_time_SIFT(Ship* problem){
               third = location.first + 1;
               fourth = location.second + 1;
               time = time + i + j + (2 * 15) + (2 * third) + (2 * (24 - fourth));
+              time_outputs.push_back(time);
               string directions = "Move container from row " + to_string(first) + " and column " + to_string(second) + " to row " + to_string(third) + " and column " + to_string(fourth) + " of buffer ";
               move_output.push_back(directions);
               buf.at(location.first).at(location.second)->weight = g.at(i).at(j)->weight;
@@ -533,6 +535,7 @@ int helper::estimated_time_SIFT(Ship* problem){
               g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
               g.at(i).at(j)->contents = buf_sorted.at(z)->contents;
               time = time + (i+1) + (j + 1);
+              time_outputs.push_back(time);
               first = 4;
               second = second - 2;
               third = i + 1;
@@ -554,6 +557,7 @@ int helper::estimated_time_SIFT(Ship* problem){
             if(g.at(i).at(j)->weight == -1 && buf_sorted.size() > z && buf_mod == 1 && g.at(i).at(j)->weight != -2 ){
               g.at(i).at(j)->weight = buf_sorted.at(z)->weight;
               time = time + (i+1) + (j + 1);
+              time_outputs.push_back(time);
               first = 4;
               second = second - 2;
               third = i + 1;
@@ -567,7 +571,7 @@ int helper::estimated_time_SIFT(Ship* problem){
       move->setGrid(g);
 
 
-      return time;
+      return time_outputs;
     }
 }
 
